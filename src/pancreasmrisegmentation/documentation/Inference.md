@@ -1,0 +1,2 @@
+ pdm run nnUNetv2_predict_from_modelfolder -i /home/anastasiia/MasterThesis/external_data/Imaging/MRISegmenter/test -o /home/anastasiia/MasterThesis/PancreasMRISegmentation/test_output -m /home/anastasiia/MasterThesis/mri_segmenter/Dataset099/nnUNetTrainer__nnUNetPlans__3d_fullres
+  -f 0 1 2 --disable_tta 

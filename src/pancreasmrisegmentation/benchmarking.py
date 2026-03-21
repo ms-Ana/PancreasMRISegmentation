@@ -71,6 +71,10 @@ def benchmarking(config: str):
                 part_id=0,
                 file_ending=dataset.file_ending,
             )
+            # clean up
+            os.remove(os.path.join(output_folder, "predict_from_raw_data_args.json"))
+            os.remove(os.path.join(output_folder, "plans.json"))
+            os.remove(os.path.join(output_folder, "dataset.json"))
 
 if __name__ == "__main__":
     benchmarking()

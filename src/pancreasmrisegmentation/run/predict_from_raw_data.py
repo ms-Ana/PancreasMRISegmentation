@@ -86,6 +86,9 @@ class nnUNetPredictorWrapper:
         This is nnU-Net's default function for making predictions. It works best for batch predictions
         (predicting many images at once).
         """
+        if file_ending != ".nii.gz":
+            rw_map = {"NibabelIOWithReorient": ""}
+
         if isinstance(output_folder_or_list_of_truncated_output_files, str):
             output_folder = output_folder_or_list_of_truncated_output_files
         elif isinstance(output_folder_or_list_of_truncated_output_files, list):

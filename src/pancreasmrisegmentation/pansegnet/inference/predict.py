@@ -22,7 +22,15 @@ from nnunet.inference.segmentation_export import (
     save_segmentation_nifti_from_softmax,
     save_segmentation_nifti,
 )
-from batchgenerators.utilities.file_and_folder_operations import join, isfile, subfiles, isdir, load_pickle, maybe_mkdir_p, subfolders
+from batchgenerators.utilities.file_and_folder_operations import (
+    join,
+    isfile,
+    subfiles,
+    isdir,
+    load_pickle,
+    maybe_mkdir_p,
+    subfolders,
+)
 import os
 from multiprocessing import Process, Queue
 import torch

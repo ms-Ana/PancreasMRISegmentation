@@ -190,7 +190,6 @@ class ResidualMambaEncoder(nn.Module):
             "Important: first entry is recommended to be 1, else we run strided conv drectly on the input"
         )
 
-       
         do_channel_token = [False] * n_stages
         feature_map_sizes = []
         feature_map_size = input_size

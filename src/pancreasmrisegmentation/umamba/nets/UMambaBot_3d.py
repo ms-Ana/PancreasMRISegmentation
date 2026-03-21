@@ -164,7 +164,6 @@ class UNetResEncoder(nn.Module):
             "Important: first entry is recommended to be 1, else we run strided conv drectly on the input"
         )
 
-        
         self.conv_pad_sizes = []
         for krnl in kernel_sizes:
             self.conv_pad_sizes.append([i // 2 for i in krnl])

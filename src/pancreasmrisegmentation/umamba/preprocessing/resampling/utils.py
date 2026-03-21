@@ -7,13 +7,21 @@ import pancreasmrisegmentation.umamba as umamba
 
 
 def recursive_find_resampling_fn_by_name(resampling_fn: str) -> Callable:
-    ret = recursive_find_python_class(join(nnunetv2.__path__[0], "preprocessing", "resampling"), resampling_fn,
-                                      'nnunetv2.preprocessing.resampling')
+    ret = recursive_find_python_class(
+        join(nnunetv2.__path__[0], "preprocessing", "resampling"),
+        resampling_fn,
+        "nnunetv2.preprocessing.resampling",
+    )
     if ret is None:
-        ret = recursive_find_python_class(join(umamba.__path__[0], "preprocessing", "resampling"), resampling_fn,
-                                          'pancreasmrisegmentation.umamba.preprocessing.resampling')
+        ret = recursive_find_python_class(
+            join(umamba.__path__[0], "preprocessing", "resampling"),
+            resampling_fn,
+            "pancreasmrisegmentation.umamba.preprocessing.resampling",
+        )
     if ret is None:
-        raise RuntimeError("Unable to find resampling function named '%s'. Please make sure this fn is located in the "
-                           "nnunetv2.preprocessing.resampling module." % resampling_fn)
+        raise RuntimeError(
+            "Unable to find resampling function named '%s'. Please make sure this fn is located in the "
+            "nnunetv2.preprocessing.resampling module." % resampling_fn
+        )
     else:
         return ret

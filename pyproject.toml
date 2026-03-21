@@ -18,6 +18,9 @@ dependencies = ["nnunet>=1.7.1",
 "pandas>=3.0.1", 
 "matplotlib>=3.10.8", 
 "SimpleITK>=2.5.3", 
+"positional-encodings>=6.0.4", 
+"accelerate>=1.13.0", 
+"bitsandbytes>=0.46.1", 
 ]
 
 requires-python = "<3.15,>=3.12"
@@ -41,6 +44,4 @@ build-backend = "setuptools.build_meta"
 distribution = true
 
 [project.scripts]
-custom_nnUNetv2_predict_from_modelfolder = "pancreasmrisegmentation.run.predict_from_raw_data:predict_entry_point_modelfolder"
-umamba_nnUNetv2_predict_from_modelfolder = "pancreasmrisegmentation.umamba.inference.predict_from_raw_data:predict_entry_point_modelfolder"
-benchmark="pancreasmrisegmentation.benchmarking:benchmarking"
+inference = "pancreasmrisegmentation.run.predict_from_raw_data:predict_entry_point_modelfolder"

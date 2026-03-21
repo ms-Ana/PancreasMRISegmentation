@@ -7,18 +7,26 @@ import SimpleITK as sitk
 import json
 from tqdm import tqdm
 
+
 ## AMOS 22 dataset has no channel dimension, but nnUNet expects one. This function adds the channel dimension to the file name, so that nnUNet can read the files correctly.
-def add_channel_dimension_to_file_name(input_path: str, file_ending: str = ".nii.gz") -> str:
+def add_channel_dimension_to_file_name(
+    input_path: str, file_ending: str = ".nii.gz"
+) -> str:
     if f"_0000{file_ending}" in input_path:
         return input_path
     return input_path.replace(file_ending, f"_0000{file_ending}")
-    
+
+
 def _add_channel_dimension_to_folder(folder_path: str, file_ending: str = ".nii.gz"):
-    for ppath in tqdm(os.listdir(folder_path), desc=f"Adding channel dimension to files in {folder_path}"):
+    for ppath in tqdm(
+        os.listdir(folder_path),
+        desc=f"Adding channel dimension to files in {folder_path}",
+    ):
         if ppath.endswith(file_ending):
             old_path = os.path.join(folder_path, ppath)
             new_path = add_channel_dimension_to_file_name(old_path, file_ending)
             os.rename(old_path, new_path)
+
 
 ## TotalSegmentator has various segmentations, but only these are relevant and present in other datasets.
 KEEP_SEGMENTATIONS = [
@@ -39,6 +47,7 @@ KEEP_SEGMENTATIONS = [
     "stomach",
     "urinary_bladder",
 ]
+
 
 def remove_not_listed_segmentations(folder_path: str, list_of_segmentations: list[str]):
     for ss in os.listdir(folder_path):
@@ -86,7 +95,7 @@ def combine_segmentation_to_file(
     sitk.WriteImage(output_image, output_path)
 
 
-## Panther dataset conversion. From .mha to .nii.gz 
+## Panther dataset conversion. From .mha to .nii.gz
 def convert_mha2nii(input_path: str, output_path: str):
     try:
         img = sitk.ReadImage(input_path)
@@ -94,12 +103,17 @@ def convert_mha2nii(input_path: str, output_path: str):
     except Exception as e:
         print(f"Error converting {input_path}: {e}")
 
+
 def convert_mha_folder_to_nii(input_folder: str, output_folder: str):
-    for file in tqdm(os.listdir(input_folder), desc=f"Converting .mha files in {input_folder} to .nii.gz in {output_folder}"):
+    for file in tqdm(
+        os.listdir(input_folder),
+        desc=f"Converting .mha files in {input_folder} to .nii.gz in {output_folder}",
+    ):
         if file.endswith(".mha"):
             output_path = os.path.join(output_folder, file).replace(".mha", ".nii.gz")
             Path(output_path).parent.mkdir(parents=True, exist_ok=True)
             convert_mha2nii(os.path.join(input_folder, file), output_path)
+
 
 @click.command()
 @click.option(
@@ -202,11 +216,7 @@ def add_channel_dimension_to_folder(folder_path: str):
 
 
 @click.command()
-@click.argument(
-    "input",
-    type=str,
-    required=True
-)
+@click.argument("input", type=str, required=True)
 @click.option(
     "--output",
     type=str,
@@ -216,5 +226,6 @@ def add_channel_dimension_to_folder(folder_path: str):
 def convert_mha_to_nii_gz(input: str, output: str):
     convert_mha_folder_to_nii(input, output if output else input)
 
+
 if __name__ == "__main__":
-    add_channel_dimension_to_folder()
+    convert_mha_to_nii_gz()

@@ -1,11 +1,8 @@
 from typing import Union, List
 
-from pancreasmrisegmentation.utils.utilities import define_device
+from pancreasmrisegmentation.utils.utilities import define_device, save_segmentation
 import torch
-from batchgenerators.utilities.file_and_folder_operations import (
-    maybe_mkdir_p,
-    isdir
-)
+from batchgenerators.utilities.file_and_folder_operations import maybe_mkdir_p, isdir
 
 from nnunetv2.configuration import default_num_processes
 from pancreasmrisegmentation.umamba.inference.predict_from_raw_data import (
@@ -13,6 +10,12 @@ from pancreasmrisegmentation.umamba.inference.predict_from_raw_data import (
 )
 from nnunetv2.inference.predict_from_raw_data import nnUNetPredictor
 from pancreasmrisegmentation.pansegnet.inference.predict import predict_from_folder
+
+from pathlib import Path
+import os
+
+from pancreasmrisegmentation.voxtell.voxtell_predictor import VoxTellPredictor
+from nnunetv2.imageio.nibabel_reader_writer import NibabelIOWithReorient
 
 
 class nnUNetPredictorWrapper:
@@ -53,8 +56,11 @@ class nnUNetPredictorWrapper:
             )
         elif predictor == "nnUNetv1":
             self.predictor = None
+        elif predictor == "voxtell":
+            self.predictor = "VoxTellPredictor"
         else:
             raise ValueError(f"Unknown predictor: {predictor}")
+        self.device = device
 
     def initialize_from_trained_model_folder(
         self,
@@ -64,6 +70,11 @@ class nnUNetPredictorWrapper:
     ):
         self.model_folder = model_folder
         self.folds = folds
+        if self.predictor == "VoxTellPredictor":
+            self.predictor = VoxTellPredictor(
+                model_dir=model_folder, device=self.device
+            )
+            return
         if self.predictor is not None:
             self.predictor.initialize_from_trained_model_folder(
                 model_folder, folds, checkpoint_name
@@ -79,22 +90,41 @@ class nnUNetPredictorWrapper:
         num_processes_segmentation_export: int = default_num_processes,
         folder_with_segs_from_prev_stage: str = None,
         num_parts: int = 1,
-        part_id: int = 0
+        part_id: int = 0,
     ):
         """
         This is nnU-Net's default function for making predictions. It works best for batch predictions
         (predicting many images at once).
         """
-        if self.predictor is not None:
-            self.predictor.predict_from_files(list_of_lists_or_source_folder=list_of_lists_or_source_folder,
-                                            output_folder_or_list_of_truncated_output_files=output_folder_or_list_of_truncated_output_files,
-                                            save_probabilities=save_probabilities,
-                                            overwrite=overwrite,
-                                            num_processes_preprocessing=num_processes_preprocessing,
-                                            num_processes_segmentation_export=num_processes_segmentation_export,
-                                            folder_with_segs_from_prev_stage=folder_with_segs_from_prev_stage,
-                                            num_parts=num_parts,
-                                            part_id=part_id)
+        if type(self.predictor).__name__ == "VoxTellPredictor":
+            reader_writer = NibabelIOWithReorient()
+            image_paths = [
+                os.path.join(list_of_lists_or_source_folder, f)
+                for f in os.listdir(list_of_lists_or_source_folder)
+            ]
+            for image_path in image_paths:
+                print(f"Loading image: {image_path}")
+                img, props = reader_writer.read_images([image_path])
+                voxtell_seg = self.predictor.predict_single_image(img, ["Pancreas"])
+                save_segmentation(
+                    voxtell_seg[0],
+                    Path(output_folder_or_list_of_truncated_output_files),
+                    Path(image_path).stem,
+                    props,
+                )
+
+        elif self.predictor is not None:
+            self.predictor.predict_from_files(
+                list_of_lists_or_source_folder=list_of_lists_or_source_folder,
+                output_folder_or_list_of_truncated_output_files=output_folder_or_list_of_truncated_output_files,
+                save_probabilities=save_probabilities,
+                overwrite=overwrite,
+                num_processes_preprocessing=num_processes_preprocessing,
+                num_processes_segmentation_export=num_processes_segmentation_export,
+                folder_with_segs_from_prev_stage=folder_with_segs_from_prev_stage,
+                num_parts=num_parts,
+                part_id=part_id,
+            )
         else:
             predict_from_folder(
                 model=self.model_folder,
@@ -102,14 +132,13 @@ class nnUNetPredictorWrapper:
                 output_folder=output_folder_or_list_of_truncated_output_files,
                 folds=self.folds,
                 save_npz=False,
-                num_threads_preprocessing = num_processes_preprocessing, 
-                num_threads_nifti_save = num_processes_segmentation_export,
-                lowres_segmentations = None,
-                part_id=part_id, 
-                num_parts=num_parts, 
-                tta=True, 
-                overwrite_existing=overwrite
-                
+                num_threads_preprocessing=num_processes_preprocessing,
+                num_threads_nifti_save=num_processes_segmentation_export,
+                lowres_segmentations=None,
+                part_id=part_id,
+                num_parts=num_parts,
+                tta=True,
+                overwrite_existing=overwrite,
             )
 
 

@@ -22,7 +22,6 @@ from nnunetv2.utilities.network_initialization import InitWeights_He
 from mamba_ssm import Mamba
 from dynamic_network_architectures.building_blocks.helper import (
     maybe_convert_scalar_to_list,
-    get_matching_pool_op,
 )
 from torch.cuda.amp import autocast
 from dynamic_network_architectures.building_blocks.residual import BasicBlockD
@@ -165,12 +164,7 @@ class UNetResEncoder(nn.Module):
             "Important: first entry is recommended to be 1, else we run strided conv drectly on the input"
         )
 
-        pool_op = (
-            get_matching_pool_op(conv_op, pool_type=pool_type)
-            if pool_type != "conv"
-            else None
-        )
-
+        
         self.conv_pad_sizes = []
         for krnl in kernel_sizes:
             self.conv_pad_sizes.append([i // 2 for i in krnl])

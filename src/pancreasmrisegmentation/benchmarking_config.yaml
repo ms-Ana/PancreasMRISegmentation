@@ -1,11 +1,11 @@
 datasets:
   panther:
-    path: /home/derzhana/MEN1/external_data/Panther/imagesTr
-    labels: /home/derzhana/MEN1/external_data/Panther/labelsTr
+    path: /home/anastasiia/MasterThesis/external_data/Imaging/Panther/nnUNet_raw/Dataset001_Test/imagesTr
+    labels: /home/anastasiia/MasterThesis/external_data/Imaging/Panther/nnUNet_raw/Dataset001_Test/labelsTr
     
-  amos22:
-    path: /home/derzhana/MEN1/external_data/AMOS22/imagesVa
-    labels: /home/derzhana/MEN1/external_data/AMOS22/labelsVa
+  # amos22:
+  #   path: /home/derzhana/MEN1/external_data/AMOS22/imagesVa
+  #   labels: /home/derzhana/MEN1/external_data/AMOS22/labelsVa
     
 
 models:
@@ -22,10 +22,10 @@ models:
   # mri_segmentator:
   #   predictor: nnUNetv2
   
-  pansegnet_t1:
-    predictor: nnUNetv1
-  pansegnet_t2:
-    predictor: nnUNetv1
+  # pansegnet_t1:
+  #   predictor: nnUNetv1
+  # pansegnet_t2:
+  #   predictor: nnUNetv1
 
   # umamba_unetr:
   #   predictor: umamba
@@ -33,6 +33,9 @@ models:
   #   predictor: umamba
   # umamba_enc:
   #   predictor: umamba
+
+  voxtell:
+    predictor: voxtell
   
   
 

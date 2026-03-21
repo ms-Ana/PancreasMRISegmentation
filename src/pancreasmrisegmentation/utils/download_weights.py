@@ -5,6 +5,7 @@ import zipfile
 import click
 import glob
 import shutil
+from huggingface_hub import snapshot_download as _snaphot_download
 
 
 def _flatten_weights(target_dir):
@@ -43,6 +44,14 @@ def _flatten_weights(target_dir):
             shutil.rmtree(full_path)
 
     print(f"Cleanup complete for {target_dir}")
+
+
+def snaphot_download(link, download_dir, model_name):
+    _snaphot_download(
+        repo_id=link,
+        allow_patterns=[f"{model_name}/*", "*.json"],
+        local_dir=download_dir,
+    )
 
 
 def gdown_download(url, output):
@@ -93,7 +102,11 @@ def request_download(url, output_dir):
         raise RuntimeError(f"Error during request_download: {e}")
 
 
-DOWNLOAD_FUNCTIONS = {"gdown": gdown_download, "requests": request_download}
+DOWNLOAD_FUNCTIONS = {
+    "gdown": gdown_download,
+    "requests": request_download,
+    "snapshot": snaphot_download,
+}
 
 WEIGHTS_SETTINGS = {
     # umamba weights
@@ -144,6 +157,11 @@ WEIGHTS_SETTINGS = {
     "mri_segmentator": {
         "link": "https://github.com/hhaentze/MRSegmentator/releases/download/v1.2.0/weights.zip",
         "download_func": "requests",
+    },
+    "voxtell": {
+        "link": "mrokuss/VoxTell",
+        "kwargs": {"model_name": "voxtell_v1.1"},
+        "download_func": "snapshot",
     },
 }
 
@@ -218,17 +236,21 @@ def download_weights(
             continue
 
         _download_weights_for_model(
-            name, settings["link"], settings["download_func"], final_path
+            name,
+            settings["link"],
+            settings["download_func"],
+            final_path,
+            settings.get("kwargs", {}),
         )
 
 
 def _download_weights_for_model(
-    model: str, link: str, download_function: str, final_path: str
+    model: str, link: str, download_function: str, final_path: str, kwargs: dict = {}
 ) -> tuple[str, str]:
     print(f"Downloading {model}...")
     download_function = DOWNLOAD_FUNCTIONS[download_function]
     try:
-        download_function(link, final_path)
+        download_function(link, final_path, **kwargs)
     except Exception as e:
         raise RuntimeError(f"Error downloading {model}: {e}")
 

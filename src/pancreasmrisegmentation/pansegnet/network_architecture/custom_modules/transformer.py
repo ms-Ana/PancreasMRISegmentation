@@ -1,8 +1,8 @@
-'''
+"""
 The implementation of the transformer block
 
 Traditional self-attention mechanism with softmax
-'''
+"""
 
 import torch
 import torch.nn as nn
@@ -15,9 +15,8 @@ import math
 import copy
 from typing import Optional
 
-from .pos_embedding import AbsolutePosEncoding, \
-                           LearnablePosEncoding, \
-                           Conv3dPosEmbedding
+from .pos_embedding import AbsolutePosEncoding
+
 
 def clones(module, N):
     """
@@ -28,7 +27,14 @@ def clones(module, N):
     """
     return torch.nn.ModuleList([copy.deepcopy(module) for _ in range(N)])
 
-def attention(query:Tensor, key:Tensor, value:Tensor, mask:Optional[Tensor]=None, dropout=None):
+
+def attention(
+    query: Tensor,
+    key: Tensor,
+    value: Tensor,
+    mask: Optional[Tensor] = None,
+    dropout=None,
+):
     """
     Compute the attention between q, k , v
     Input query_size:
@@ -37,17 +43,24 @@ def attention(query:Tensor, key:Tensor, value:Tensor, mask:Optional[Tensor]=None
     d_model = query.size(-1)
     scores = torch.matmul(query, key.transpose(-2, -1)) / math.sqrt(d_model)
     if mask is not None:
-        scores = scores.masked_fill(mask==0, -1e9)
+        scores = scores.masked_fill(mask == 0, -1e9)
 
     score_softmax = F.softmax(scores, dim=-1)
 
     if dropout is not None:
         score_softmax = dropout(score_softmax)
-    
+
     out = torch.matmul(score_softmax, value)
     return out, score_softmax
 
-def linear_attention(query:Tensor, key:Tensor, value:Tensor, mask:Optional[Tensor]=None, dropout=None):
+
+def linear_attention(
+    query: Tensor,
+    key: Tensor,
+    value: Tensor,
+    mask: Optional[Tensor] = None,
+    dropout=None,
+):
     """
     Compute the linear attention between q, k , v
     Implementation of:
@@ -57,23 +70,24 @@ def linear_attention(query:Tensor, key:Tensor, value:Tensor, mask:Optional[Tenso
     """
     d_model = query.size(-1)
     query = F.softmax(query, dim=-1) / math.sqrt(d_model)
-    '''
+    """
     key = F.gelu(key)
     value = F.gelu(value)
-    '''
+    """
     if mask is not None:
         key = key.masked_fill_(~mask, -1e9)
         value = value.masked_fill_(~mask, 0)
 
     key = F.softmax(key, dim=-2)
-    context = torch.einsum('bhnd, bhne->bhde', key, value)
+    context = torch.einsum("bhnd, bhne->bhde", key, value)
 
     if dropout is not None:
         score_softmax = dropout(query)
 
-    out = torch.einsum('bhnd, bhde->bhne', query, context)
+    out = torch.einsum("bhnd, bhde->bhne", query, context)
 
     return out, score_softmax
+
 
 class MultihAttention(nn.Module):
     """
@@ -85,9 +99,12 @@ class MultihAttention(nn.Module):
     Output:
         the result after multiheadattention, same size with input
     """
-    def __init__(self, d_model:int, nhead:int, dropout:float):
+
+    def __init__(self, d_model: int, nhead: int, dropout: float):
         super(MultihAttention, self).__init__()
-        assert d_model % nhead == 0, 'the dimension of feature should be devided by num head'
+        assert d_model % nhead == 0, (
+            "the dimension of feature should be devided by num head"
+        )
         self.d_model = d_model
         self.d_k = d_model // nhead
         self.nhead = nhead
@@ -96,23 +113,29 @@ class MultihAttention(nn.Module):
         self.attn = None
         self.dropout = Dropout(p=dropout)
 
-    def forward(self, query:Tensor, key:Tensor, value:Tensor, 
-                src_mask:Optional[Tensor]=None):
-        
+    def forward(
+        self,
+        query: Tensor,
+        key: Tensor,
+        value: Tensor,
+        src_mask: Optional[Tensor] = None,
+    ):
         if src_mask is not None:
             src_mask = src_mask.unsqueeze(1)
 
         n_batch = query.size(0)
-        query, key, value = \
-            [l(x).view(n_batch, -1, self.nhead, self.d_k).transpose(1, 2)
-                for l, x in zip(self.linears, (query, key, value))]
-        '''
+        query, key, value = [
+            l(x).view(n_batch, -1, self.nhead, self.d_k).transpose(1, 2)
+            for l, x in zip(self.linears, (query, key, value))
+        ]
+        """
         # Try linear attention here
         x, self.attn = attention(query=query, key=key, value=value, mask=src_mask,
                                  dropout=self.dropout)
-        '''
-        x, self.attn = linear_attention(query=query, key=key, value=value, mask=src_mask,
-                                 dropout=self.dropout)
+        """
+        x, self.attn = linear_attention(
+            query=query, key=key, value=value, mask=src_mask, dropout=self.dropout
+        )
         x = x.transpose(1, 2).contiguous().view(n_batch, -1, self.nhead * self.d_k)
         return self.linears[-1](x)
 
@@ -130,8 +153,16 @@ class SelfAttentionLayer(nn.Module):
     Output:
         The encoded feature using transformer encoder layer
     """
-    def __init__(self, d_model:int, nhead:int, dim_feedforward:int, dropout:float=0.1,
-                 activation="gelu", layer_norm_eps=1e-6):
+
+    def __init__(
+        self,
+        d_model: int,
+        nhead: int,
+        dim_feedforward: int,
+        dropout: float = 0.1,
+        activation="gelu",
+        layer_norm_eps=1e-6,
+    ):
         super(SelfAttentionLayer, self).__init__()
         self.d_model = d_model
         self.self_attn = MultihAttention(d_model, nhead, dropout=dropout)
@@ -146,12 +177,12 @@ class SelfAttentionLayer(nn.Module):
         self.dropout1 = Dropout(p=dropout)
         self.dropout2 = Dropout(p=dropout)
 
-        if activation == 'relu':
+        if activation == "relu":
             self.activation = F.relu
         else:
             self.activation = F.gelu
 
-    def forward(self, x, src_mask:Optional[Tensor]=None)->Tensor:
+    def forward(self, x, src_mask: Optional[Tensor] = None) -> Tensor:
         x1 = self.self_attn(x, x, x, src_mask=src_mask)
         x = x + self.dropout1(x1)
         x = self.layer_norm1(x)
@@ -169,23 +200,32 @@ class TransEncoder(nn.Module):
         attn_layer: SelfAttentionLayer
         N: the repeat time
     """
+
     def __init__(self, attn_layer, N):
         super().__init__()
         self.layers = clones(attn_layer, N)
-    
-    def forward(self, x, mask:Optional[Tensor]=None):
+
+    def forward(self, x, mask: Optional[Tensor] = None):
         """
         repeat the self attention layer N times
         """
         for layer in self.layers:
-                x = layer(x, mask)
+            x = layer(x, mask)
 
         return x
 
 
 class SelfAtten3DBlock(nn.Module):
-    def __init__(self, in_dim, feature_length, d_model, nhead:int, dropout:float=0.3, N:int=8):
-        '''
+    def __init__(
+        self,
+        in_dim,
+        feature_length,
+        d_model,
+        nhead: int,
+        dropout: float = 0.3,
+        N: int = 8,
+    ):
+        """
         Here is used to define the connection of skip encoded feature maps
         The transformer block will be only applied on the selected roi region
         return should be the same size with input
@@ -197,24 +237,28 @@ class SelfAtten3DBlock(nn.Module):
             N: attention repeated times
         Output:
             return the reshaped 3d convolutional block
-        '''
+        """
         super().__init__()
         self.in_dim = in_dim
         self.d_model = d_model
         self.feature_length = feature_length
         self.linear_proj = nn.Linear(in_features=in_dim, out_features=d_model)
         self.linear_back_proj = nn.Linear(in_features=d_model, out_features=in_dim)
-        self.pos_encode = AbsolutePosEncoding(max_length=feature_length, embedding_dim=d_model)
-        attn_layer = SelfAttentionLayer(d_model=d_model, nhead=nhead, dim_feedforward=d_model, dropout=dropout)
+        self.pos_encode = AbsolutePosEncoding(
+            max_length=feature_length, embedding_dim=d_model
+        )
+        attn_layer = SelfAttentionLayer(
+            d_model=d_model, nhead=nhead, dim_feedforward=d_model, dropout=dropout
+        )
         self.transformer = TransEncoder(attn_layer, N)
 
-    def forward(self, x: torch.Tensor, mask:Optional[torch.Tensor]=None):
-        '''
+    def forward(self, x: torch.Tensor, mask: Optional[torch.Tensor] = None):
+        """
         x: Input x size
             [nbatch, channel, height, width, depth]
         Mask:
             [nbatch, 1, height, width, depth]
-        '''
+        """
         nbatch, _, height, width, depth = x.shape
         x = x.flatten(start_dim=2).transpose(1, 2)
         x = self.linear_proj(x)

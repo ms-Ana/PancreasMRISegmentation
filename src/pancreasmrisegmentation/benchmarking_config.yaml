@@ -1,0 +1,35 @@
+datasets:
+  panther:
+    path: /home/anastasiia/MasterThesis/external_data/Imaging/Panther/nnUNet_raw/Dataset001_Test/imagesTr
+    labels: /home/anastasiia/MasterThesis/external_data/Imaging/Panther/nnUNet_raw/Dataset001_Test/labelsTr
+    file_ending: .mha
+  amos22:
+    path: /home/anastasiia/MasterThesis/external_data/Imaging/AMOS22/imagesVa
+    labels: /home/anastasiia/MasterThesis/external_data/Imaging/AMOS22/labelsVa
+    file_ending: .nii.gz
+
+models:
+  umamba_nnunet:
+    predictor: nnUNetv2
+  umamba_bot:
+    predictor: umamba
+  umamba_unetr:
+    predictor: umamba
+  umamba_swinunetr:
+    predictor: umamba
+  umamba_segresnet:
+    predictor: umamba
+  umamba_enc:
+    predictor: umamba
+  pansegnet_t1:
+    predictor: nnUNetv1
+  pansegnet_t2:
+    predictor: nnUNetv1
+  total_segmentator:
+    predictor: nnUNetv2
+  mri_segmenter:
+    predictor: nnUNetv2
+  mri_segmentator:
+    predictor: nnUNetv2
+
+device: cuda

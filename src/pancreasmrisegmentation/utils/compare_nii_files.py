@@ -70,7 +70,11 @@ def remap_labels(data: np.ndarray, mapping: dict[int, int] | None):
     if np.min(data) < 0:
         raise ValueError("Label remapping expects non-negative labels.")
 
-    max_val = int(max(data.max(), max(mapping.keys(), default=0), max(mapping.values(), default=0)))
+    max_val = int(
+        max(
+            data.max(), max(mapping.keys(), default=0), max(mapping.values(), default=0)
+        )
+    )
     lut = np.arange(max_val + 1, dtype=data.dtype)
 
     for src, dst in mapping.items():
@@ -98,7 +102,9 @@ def _is_integer_like(data: np.ndarray, check_count: int = 200000) -> bool:
 
     stride = max(1, flat.size // check_count)
     sample = flat[::stride]
-    return np.all(np.isfinite(sample)) and np.allclose(sample, np.round(sample), atol=1e-6)
+    return np.all(np.isfinite(sample)) and np.allclose(
+        sample, np.round(sample), atol=1e-6
+    )
 
 
 def infer_nifti_mode(data1: np.ndarray, data2: np.ndarray) -> str:
@@ -369,7 +375,9 @@ def main():
     label_mapping = parse_label_mapping(args.label_mapping)
 
     common_files = set(os.listdir(args.dir_a)) & set(os.listdir(args.dir_b))
-    common_files = sorted([name for name in common_files if should_compare(name, args.extensions)])
+    common_files = sorted(
+        [name for name in common_files if should_compare(name, args.extensions)]
+    )
 
     print(f"Found {len(common_files)} common files to compare.")
     print("=" * 50)

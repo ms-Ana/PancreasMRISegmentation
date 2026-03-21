@@ -9,7 +9,10 @@ dependencies = ["nnunet>=1.7.1",
 "nnunetv2>=2.6.2", 
 "torch==2.10.0", 
 "click>=8.3.1", 
-"gdown>=5.2.1"
+"gdown>=5.2.1", 
+"monai>=1.5.2", 
+"omegaconf>=2.3.0", 
+"python-dotenv>=1.2.2"
 ]
 requires-python = "<3.15,>=3.12"
 readme = "README.md"
@@ -25,3 +28,4 @@ distribution = true
 
 [project.scripts]
 custom_nnUNetv2_predict_from_modelfolder = "pancreasmrisegmentation.run.predict_from_raw_data:predict_entry_point_modelfolder"
+umamba_nnUNetv2_predict_from_modelfolder = "pancreasmrisegmentation.umamba.inference.predict_from_raw_data:predict_entry_point_modelfolder"

@@ -1,5 +1,5 @@
 from nnunetv2.training.nnUNetTrainer.nnUNetTrainer import nnUNetTrainer
-from nnunetv2.utilities.plans_handling.plans_handler import (
+from pancreasmrisegmentation.umamba.plans_handling.plans_handler import (
     ConfigurationManager,
     PlansManager,
 )

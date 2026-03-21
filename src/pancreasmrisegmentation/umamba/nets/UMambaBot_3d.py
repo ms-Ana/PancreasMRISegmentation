@@ -10,7 +10,7 @@ from torch.nn.modules.conv import _ConvNd
 from torch.nn.modules.dropout import _DropoutNd
 from dynamic_network_architectures.building_blocks.helper import convert_conv_op_to_dim
 
-from nnunetv2.utilities.plans_handling.plans_handler import (
+from pancreasmrisegmentation.umamba.plans_handling.plans_handler import (
     ConfigurationManager,
     PlansManager,
 )

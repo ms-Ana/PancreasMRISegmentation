@@ -29,13 +29,13 @@ models:
 
   # umamba_unetr:
   #   predictor: umamba
-  # umamba_bot:
-  #   predictor: umamba
-  # umamba_enc:
-  #   predictor: umamba
+  umamba_bot:
+    predictor: umamba
+  umamba_enc:
+    predictor: umamba
 
-  voxtell:
-    predictor: voxtell
+  # voxtell:
+  #   predictor: voxtell
   
   
 

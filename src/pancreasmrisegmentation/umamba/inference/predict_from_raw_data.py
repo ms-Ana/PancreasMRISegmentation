@@ -46,7 +46,7 @@ from nnunetv2.utilities.json_export import recursive_fix_for_json_export
 from nnunetv2.utilities.label_handling.label_handling import (
     determine_num_input_channels,
 )
-from nnunetv2.utilities.plans_handling.plans_handler import (
+from pancreasmrisegmentation.umamba.plans_handling.plans_handler import (
     PlansManager,
     ConfigurationManager,
 )

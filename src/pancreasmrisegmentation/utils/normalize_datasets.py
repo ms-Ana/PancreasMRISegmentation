@@ -217,4 +217,4 @@ def convert_mha_to_nii_gz(input: str, output: str):
     convert_mha_folder_to_nii(input, output if output else input)
 
 if __name__ == "__main__":
-    convert_mha_to_nii_gz()
+    add_channel_dimension_to_folder()

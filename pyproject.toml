@@ -43,3 +43,4 @@ distribution = true
 [project.scripts]
 custom_nnUNetv2_predict_from_modelfolder = "pancreasmrisegmentation.run.predict_from_raw_data:predict_entry_point_modelfolder"
 umamba_nnUNetv2_predict_from_modelfolder = "pancreasmrisegmentation.umamba.inference.predict_from_raw_data:predict_entry_point_modelfolder"
+benchmark="pancreasmrisegmentation.benchmarking:benchmarking"

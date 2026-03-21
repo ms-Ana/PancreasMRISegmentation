@@ -12,6 +12,7 @@ from pancreasmrisegmentation.umamba.inference.predict_from_raw_data import (
     nnUNetPredictor as umamba_nnUNetPredictor,
 )
 from nnunetv2.inference.predict_from_raw_data import nnUNetPredictor
+from pancreasmrisegmentation.pansegnet.inference.predict import predict_from_folder
 
 
 class nnUNetPredictorWrapper:
@@ -50,6 +51,8 @@ class nnUNetPredictorWrapper:
                 verbose_preprocessing=verbose_preprocessing,
                 allow_tqdm=allow_tqdm,
             )
+        elif predictor == "nnUNetv1":
+            self.predictor = None
         else:
             raise ValueError(f"Unknown predictor: {predictor}")
 
@@ -59,16 +62,19 @@ class nnUNetPredictorWrapper:
         folds: Union[int, List[int]],
         checkpoint_name: str = "checkpoint_final.pth",
     ):
-        self.predictor.initialize_from_trained_model_folder(
-            model_folder, folds, checkpoint_name
-        )
+        self.model_folder = model_folder
+        self.folds = folds
+        if self.predictor is not None:
+            self.predictor.initialize_from_trained_model_folder(
+                model_folder, folds, checkpoint_name
+            )
 
     def predict_from_files(
         self,
         list_of_lists_or_source_folder: Union[str, List[List[str]]],
         output_folder_or_list_of_truncated_output_files: Union[str, None, List[str]],
         save_probabilities: bool = False,
-        overwrite: bool = True,
+        overwrite: bool = False,
         num_processes_preprocessing: int = default_num_processes,
         num_processes_segmentation_export: int = default_num_processes,
         folder_with_segs_from_prev_stage: str = None,
@@ -79,16 +85,32 @@ class nnUNetPredictorWrapper:
         This is nnU-Net's default function for making predictions. It works best for batch predictions
         (predicting many images at once).
         """
-
-        self.predictor.predict_from_files(list_of_lists_or_source_folder=list_of_lists_or_source_folder,
-                                          output_folder_or_list_of_truncated_output_files=output_folder_or_list_of_truncated_output_files,
-                                          save_probabilities=save_probabilities,
-                                          overwrite=overwrite,
-                                          num_processes_preprocessing=num_processes_preprocessing,
-                                          num_processes_segmentation_export=num_processes_segmentation_export,
-                                          folder_with_segs_from_prev_stage=folder_with_segs_from_prev_stage,
-                                          num_parts=num_parts,
-                                          part_id=part_id)
+        if self.predictor is not None:
+            self.predictor.predict_from_files(list_of_lists_or_source_folder=list_of_lists_or_source_folder,
+                                            output_folder_or_list_of_truncated_output_files=output_folder_or_list_of_truncated_output_files,
+                                            save_probabilities=save_probabilities,
+                                            overwrite=overwrite,
+                                            num_processes_preprocessing=num_processes_preprocessing,
+                                            num_processes_segmentation_export=num_processes_segmentation_export,
+                                            folder_with_segs_from_prev_stage=folder_with_segs_from_prev_stage,
+                                            num_parts=num_parts,
+                                            part_id=part_id)
+        else:
+            predict_from_folder(
+                model=self.model_folder,
+                input_folder=list_of_lists_or_source_folder,
+                output_folder=output_folder_or_list_of_truncated_output_files,
+                folds=self.folds,
+                save_npz=False,
+                num_threads_preprocessing = num_processes_preprocessing, 
+                num_threads_nifti_save = num_processes_segmentation_export,
+                lowres_segmentations = None,
+                part_id=part_id, 
+                num_parts=num_parts, 
+                tta=True, 
+                overwrite_existing=overwrite
+                
+            )
 
 
 def predict_entry_point_modelfolder():

@@ -1,6 +1,8 @@
 from omegaconf import OmegaConf
 import click
 import os
+import time
+from datetime import timedelta
 
 from pancreasmrisegmentation.config import MODEL_DIR, RESULTS_DIR
 from pancreasmrisegmentation.run.predict_from_raw_data import nnUNetPredictorWrapper
@@ -33,24 +35,36 @@ def benchmarking(config: str):
         predictor.initialize_from_trained_model_folder(model_path, folds, "checkpoint_final.pth")
 
         for dataset_name, dataset in conf.datasets.items():
-            print(f"Predicting {model_name} on {dataset_name}...")
             output_folder = os.path.join(RESULTS_DIR, model_name, dataset_name)
             os.makedirs(output_folder, exist_ok=True)
-            predictor.predict_from_files(
-                dataset.path,
-                output_folder,
-                save_probabilities=False,
-                overwrite=False,
-                num_processes_preprocessing=3,
-                num_processes_segmentation_export=3,
-                folder_with_segs_from_prev_stage=None,
-                num_parts=1,
-                part_id=0,
-            )
-            # clean up
-            os.remove(os.path.join(output_folder, "predict_from_raw_data_args.json"))
-            os.remove(os.path.join(output_folder, "plans.json"))
-            os.remove(os.path.join(output_folder, "dataset.json"))
 
+            print(f"Predicting {model_name} on {dataset_name}...")
+            try:
+                start_time = time.time()
+                predictor.predict_from_files(
+                    dataset.path,
+                    output_folder,
+                    save_probabilities=False,
+                    overwrite=False,
+                    num_processes_preprocessing=4,
+                    num_processes_segmentation_export=4,
+                    folder_with_segs_from_prev_stage=None,
+                    num_parts=1,
+                    part_id=0,
+                )
+                elapsed_time = time.time() - start_time
+                print(f"Finished predicting {model_name} on {dataset_name} in {timedelta(seconds=elapsed_time)}.")
+
+                
+            except Exception as e:
+                print(f"Error occurred while predicting {model_name} on {dataset_name}: {e}")
+                raise e
+            finally:
+                # clean up
+                for meta_file in ["predict_from_raw_data_args.json", "plans.json", "dataset.json", "plans.pkl"]:
+                    path = os.path.join(output_folder, meta_file)
+                    if os.path.exists(path):
+                        os.remove(path)
+        
 if __name__ == "__main__":
     benchmarking()

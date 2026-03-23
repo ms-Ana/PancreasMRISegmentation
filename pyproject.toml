@@ -21,6 +21,9 @@ dependencies = ["nnunet>=1.7.1",
 "positional-encodings>=6.0.4", 
 "accelerate>=1.13.0", 
 "bitsandbytes>=0.46.1", 
+"surface-distance>=0.1", 
+"transformers>=5.3.0", 
+"antspyx>=0.6.1"
 ]
 
 requires-python = "<3.15,>=3.12"
@@ -29,8 +32,10 @@ license = {text = "MIT"}
 
 
 [project.optional-dependencies]
-umamba = ["causal-conv1d @ https://github.com/Dao-AILab/causal-conv1d/releases/download/v1.6.1.post4/causal_conv1d-1.6.1+cu12torch2.10cxx11abiTRUE-cp312-cp312-linux_x86_64.whl", 
-"mamba-ssm @ https://github.com/state-spaces/mamba/releases/download/v2.3.1/mamba_ssm-2.3.1+cu12torch2.10cxx11abiTRUE-cp312-cp312-linux_x86_64.whl"]
+umamba = [
+    "causal-conv1d @ https://github.com/Dao-AILab/causal-conv1d/releases/download/v1.6.1.post4/causal_conv1d-1.6.1+cu12torch2.10cxx11abiTRUE-cp312-cp312-linux_x86_64.whl",
+    "mamba-ssm @ https://github.com/state-spaces/mamba/releases/download/v2.3.1/mamba_ssm-2.3.1+cu12torch2.10cxx11abiTRUE-cp312-cp312-linux_x86_64.whl",
+]
 all = [
     "pancreasmrisegmentation[umamba]"
 ]
@@ -45,3 +50,4 @@ distribution = true
 
 [project.scripts]
 inference = "pancreasmrisegmentation.run.predict_from_raw_data:predict_entry_point_modelfolder"
+benchmark = "pancreasmrisegmentation.benchmarking:benchmarking"

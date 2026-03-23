@@ -84,6 +84,7 @@ def benchmarking(config: str):
                     "plans.json",
                     "dataset.json",
                     "plans.pkl",
+                    "postprocessing.json"
                 ]:
                     path = os.path.join(output_folder, meta_file)
                     if os.path.exists(path):

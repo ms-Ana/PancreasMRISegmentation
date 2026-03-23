@@ -87,7 +87,7 @@ class VoxTellPredictor:
             bnb_4bit_quant_type="nf4",  # Normalized Float 4 is usually better
         )
         self.text_backbone = AutoModel.from_pretrained(
-            text_encoding_model, quantization_config=quant_config, device_map="auto"
+            text_encoding_model, quantization_config=quant_config, device_map={" ": self.device}
         )
         self.max_text_length = 8192
 

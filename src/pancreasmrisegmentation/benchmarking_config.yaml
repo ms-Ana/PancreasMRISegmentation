@@ -1,41 +1,70 @@
 datasets:
   panther:
-    path: /home/anastasiia/MasterThesis/external_data/Imaging/Panther/nnUNet_raw/Dataset001_Test/imagesTr
-    labels: /home/anastasiia/MasterThesis/external_data/Imaging/Panther/nnUNet_raw/Dataset001_Test/labelsTr
+    path: 
+    labels: 
+    label: 2
     
-  # amos22:
-  #   path: /home/derzhana/MEN1/external_data/AMOS22/imagesVa
-  #   labels: /home/derzhana/MEN1/external_data/AMOS22/labelsVa
+  amos22:
+    path: 
+    labels: 
+    label: 10
+
+  mrisegmenter:
+    path: 
+    labels: 
+    label: 11
     
+  totalsegmentator:
+    path: 
+    labels:
+    label: 12
+    
+    pansegnet_t2:
+      path: 
+      labels: 
+      label: 1
 
 models:
-  # umamba_nnunet:
-  #   predictor: nnUNetv2
-  # umamba_swinunetr:
-  #   predictor: umamba
-  # umamba_segresnet:
-  #   predictor: umamba
-  # total_segmentator:
-  #   predictor: nnUNetv2
-  # mri_segmenter:
-  #   predictor: nnUNetv2
-  # mri_segmentator:
-  #   predictor: nnUNetv2
-  
-  # pansegnet_t1:
-  #   predictor: nnUNetv1
-  # pansegnet_t2:
-  #   predictor: nnUNetv1
 
-  # umamba_unetr:
-  #   predictor: umamba
+  umamba_nnunet:
+    predictor: nnUNetv2
+    label: 4
+  umamba_swinunetr:
+    predictor: umamba
+    label: 4
+  umamba_segresnet:
+    predictor: umamba
+    label: 4    
   umamba_bot:
     predictor: umamba
+    label: 4
   umamba_enc:
     predictor: umamba
+    label: 4
 
-  # voxtell:
-  #   predictor: voxtell
+  total_segmentator:
+    predictor: nnUNetv2
+    label: 7
+
+  mri_segmenter:
+    predictor: nnUNetv2
+    label: 11
+
+  mri_segmentator:
+    predictor: nnUNetv2
+    label: 7
+
+  pansegnet_t1:
+    predictor: nnUNetv1
+    label: 1
+  pansegnet_t2:
+    predictor: nnUNetv1
+    label: 1
+
+
+  voxtell:
+    predictor: voxtell
+    label: 1
   
   
 

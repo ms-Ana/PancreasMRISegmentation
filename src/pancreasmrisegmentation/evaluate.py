@@ -27,6 +27,9 @@ using only .mha and .nii.gz files. This script:
 import os
 import json
 import numpy as np
+if not hasattr(np, "Inf"):
+    np.Inf = np.inf
+
 from pathlib import Path
 import SimpleITK as sitk
 from surface_distance import metrics as surface_metrics
@@ -71,7 +74,7 @@ def find_file(directory, subject, allowed_extensions=ALLOWED_EXTENSIONS):
 
 
 def evaluate_segmentation_performance(
-    pred_dir, gt_dir, subject_list=None, verbose=False
+    pred_dir, gt_dir, label: int, dataset_label: int, subject_list=None, verbose=False, 
 ):
     """
     Evaluates segmentation metrics for all subjects.
@@ -101,6 +104,7 @@ def evaluate_segmentation_performance(
     for subj in subject_list:
         pred_file = find_file(pred_dir, subj)
         gt_file = find_file(gt_dir, subj)
+        print(pred_file, gt_file)
 
         if pred_file is None:
             if verbose:
@@ -132,6 +136,9 @@ def evaluate_segmentation_performance(
 
         # Convert ground truth mask to uint8.
         mask_gt = mask_gt.astype(np.uint8)
+        if dataset_label is not None:
+            mask_gt = np.where(mask_gt == dataset_label, 1, 0)  # Binary mask for the specified label.
+        mask_pred = np.where(mask_pred == label, 1, 0)  # Binary mask for the specified label.
 
         # Ensure prediction mask is binary.
         unique_vals = np.unique(mask_pred)
@@ -164,60 +171,61 @@ def evaluate_segmentation_performance(
                     f"Subject {subj}: Prediction mask is uniform. Metrics set to 0."
                 )  # GT non-empty but prediction empty or full of 1s→ complete miss.
             # Compute max_distance to set distance metrics.
-            # max_distance = np.linalg.norm(np.array(mask_gt.shape) * np.array(spacing_gt))
+                max_distance = np.linalg.norm(np.array(mask_gt.shape) * np.array(spacing_gt))
             # # Overlap-based metrics are 0; distances get the penalty.
-            # return {
-            # 	"volumetric_dice": 0.0,
-            # 	"surface_dice": 0.0,
-            # 	"hausdorff95": max_distance,
-            # 	"masd": max_distance,
-            # 	"gt_volume": np.sum(mask_gt) * np.prod(spacing_gt),
-            # 	"pred_volume": 0.0,
-            # 	"time_score": 0.0
-            # }
-            # metrics_list.append(subj_metrics)
-            continue
-
-        # Compute surface-based metrics using the ground truth spacing.
-        surface_distances = surface_metrics.compute_surface_distances(
-            mask_gt, mask_pred, spacing_mm=spacing_gt
-        )
-        dice = surface_metrics.compute_dice_coefficient(mask_gt, mask_pred)
-        surf_dice = surface_metrics.compute_surface_dice_at_tolerance(
-            surface_distances, tolerance_mm=5
-        )
-        hausdorff95 = surface_metrics.compute_robust_hausdorff(
-            surface_distances, percent=95
-        )
-        avg_gt_to_pred, avg_pred_to_gt = (
-            surface_metrics.compute_average_surface_distance(surface_distances)
-        )
-        masd = (avg_gt_to_pred + avg_pred_to_gt) / 2.0
-
-        # Compute tumor volumes using the ground truth spacing.
-        voxel_volume = np.prod(spacing_gt)
-        gt_volume = np.sum(mask_gt) * voxel_volume
-        pred_volume = np.sum(mask_pred) * voxel_volume
-
-        subj_metrics = {
-            "subject": subj,
-            "volumetric_dice": dice,
-            "surface_dice": surf_dice,
-            "hausdorff95": hausdorff95,
-            "masd": masd,
-            "gt_volume": gt_volume,
-            "pred_volume": pred_volume,
-        }
-        metrics_list.append(subj_metrics)
-        if verbose:
-            print(f"Subject: {subj}")
-            print(f"  Volumetric Dice: {dice:.4f}")
-            print(f"  Surface Dice (5mm): {surf_dice:.4f}")
-            print(f"  Hausdorff95: {hausdorff95:.4f}")
-            print(f"  MASD: {masd:.4f}")
-            print(
-                f"  GT Volume: {gt_volume:.2f} mm³, Pred Volume: {pred_volume:.2f} mm³"
+            subj_metrics = {
+                "subject": subj,
+            	"volumetric_dice": 0.0,
+            	"surface_dice": 0.0,
+            	"hausdorff95": max_distance,
+            	"masd": max_distance,
+            	"gt_volume": np.sum(mask_gt) * np.prod(spacing_gt),
+            	"pred_volume": np.sum(mask_pred) * np.prod(spacing_gt)
+            }
+            metrics_list.append(subj_metrics)
+  
+        else:
+            # Compute surface-based metrics using the ground truth spacing.
+            surface_distances = surface_metrics.compute_surface_distances(
+                mask_gt, mask_pred, spacing_mm=spacing_gt
             )
+            dice = surface_metrics.compute_dice_coefficient(mask_gt, mask_pred)
+            surf_dice = surface_metrics.compute_surface_dice_at_tolerance(
+                surface_distances, tolerance_mm=5
+            )
+            hausdorff95 = surface_metrics.compute_robust_hausdorff(
+                surface_distances, percent=95
+            )
+            avg_gt_to_pred, avg_pred_to_gt = (
+                surface_metrics.compute_average_surface_distance(surface_distances)
+            )
+            masd = (avg_gt_to_pred + avg_pred_to_gt) / 2.0
+
+            # Compute tumor volumes using the ground truth spacing.
+            voxel_volume = np.prod(spacing_gt)
+            gt_volume = np.sum(mask_gt) * voxel_volume
+            pred_volume = np.sum(mask_pred) * voxel_volume
+
+            subj_metrics = {
+                "subject": subj,
+                "volumetric_dice": dice,
+                "surface_dice": surf_dice,
+                "hausdorff95": hausdorff95,
+                "masd": masd,
+                "gt_volume": gt_volume,
+                "pred_volume": pred_volume,
+            }
+            if verbose:
+                print(f"Subject: {subj}")
+                print(f"  Volumetric Dice: {dice:.4f}")
+                print(f"  Surface Dice (5mm): {surf_dice:.4f}")
+                print(f"  Hausdorff95: {hausdorff95:.4f}")
+                print(f"  MASD: {masd:.4f}")
+                print(
+                    f"  GT Volume: {gt_volume:.2f} mm³, Pred Volume: {pred_volume:.2f} mm³"
+                )
+        metrics_list.append(subj_metrics)
+        
 
     # Aggregate metrics across subjects.
     if len(metrics_list) == 0:
@@ -238,7 +246,7 @@ def evaluate_segmentation_performance(
         "mean_surface_dice": mean_surf_dice,
         "mean_hausdorff95": mean_hausdorff95,
         "mean_masd": mean_masd,
-        "tumor_burden_rmse": rmse_volume,
+        "rmse": rmse_volume,
     }
 
     return {
@@ -267,13 +275,25 @@ def evaluate_segmentation_performance(
     help="Optional JSON file with {'subject_list': [...]}, or a comma-separated list of subject IDs",
 )
 @click.option(
+    "--label",
+    type=int,
+    default=1,
+    help="The label value in the prediction masks to evaluate",
+)
+@click.option(
+    "--dataset_label", 
+    type=int,
+    default=1,
+    help="The label value in the ground truth masks to evaluate. If None, all nonzero values are considered foreground.",
+)
+@click.option(
     "--save_path",
     type=str,
     default=None,
     help="Optional path to save the aggregated metrics as a JSON file",
 )
 @click.option("--verbose", is_flag=True, help="Enable verbose output")
-def main(pred_dir: str, gt_dir: str, subject_list: str, save_path: str, verbose: bool):
+def main(pred_dir: str, gt_dir: str, subject_list: str, label: int, dataset_label: int, save_path: str, verbose: bool):
     if subject_list is not None:
         if subject_list.endswith(".json"):
             with open(subject_list, "r") as fp:
@@ -282,7 +302,7 @@ def main(pred_dir: str, gt_dir: str, subject_list: str, save_path: str, verbose:
             subject_list = [s.strip() for s in subject_list.split(",")]
 
     results = evaluate_segmentation_performance(
-        pred_dir, gt_dir, subject_list=subject_list, verbose=verbose
+        pred_dir, gt_dir, label=label, dataset_label=dataset_label, subject_list=subject_list, verbose=verbose
     )
     print("Evaluation Metrics:")
     print(json.dumps(results, indent=4))

@@ -153,8 +153,8 @@ WEIGHTS_SETTINGS = {
         "link": "https://nihcc.app.box.com/index.php?rm=box_download_shared_file&shared_name=q6vl3015hteoufz7jll63u3hdqk79li7&file_id=f_1544045874167",
         "download_func": "requests",
     },
-    # mri segmentator weights
-    "mri_segmentator": {
+    # mr segmentator weights
+    "mr_segmentator": {
         "link": "https://github.com/hhaentze/MRSegmentator/releases/download/v1.2.0/weights.zip",
         "download_func": "requests",
     },

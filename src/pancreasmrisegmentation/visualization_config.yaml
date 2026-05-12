@@ -1,0 +1,7 @@
+data_path: "/home/anastasiia/MasterThesis/external_data/Imaging/Panther/nnUNet_raw/Dataset090_PantherTask1/imagesTr"
+segmentations:
+  - path: "/home/anastasiia/MasterThesis/external_data/Imaging/Panther/nnUNet_raw/Dataset090_PantherTask1/labelsTr"
+    name: "Ground Truth"
+    labels:
+      1: "tumor"
+      2: "pancreas"

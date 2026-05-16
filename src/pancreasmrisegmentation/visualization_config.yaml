@@ -1,7 +1,26 @@
-data_path: "/home/anastasiia/MasterThesis/external_data/Imaging/Panther/nnUNet_raw/Dataset090_PantherTask1/imagesTr"
+data_path: /home/anastasiia/MasterThesis/internal_data/T1_Post-Contrast_3D
 segmentations:
-  - path: "/home/anastasiia/MasterThesis/external_data/Imaging/Panther/nnUNet_raw/Dataset090_PantherTask1/labelsTr"
-    name: "Ground Truth"
+  - path: /home/anastasiia/MasterThesis/internal_data/T1_Post-Contrast_3D_masks/mr_segmentator
+    name: mr_segmentator
     labels:
-      1: "tumor"
-      2: "pancreas"
+      7: "pancreas"
+
+  - path: /home/anastasiia/MasterThesis/internal_data/T1_Post-Contrast_3D_masks/mri_segmenter
+    name: mri_segmenter
+    labels:
+      11: "pancreas"
+  
+  - path: /home/anastasiia/MasterThesis/internal_data/T1_Post-Contrast_3D_masks/pansegnet_t1
+    name: pansegnet_t1
+    labels:
+      1: "pancreas"
+
+  - path: /home/anastasiia/MasterThesis/internal_data/T1_Post-Contrast_3D_masks/total_segmentator
+    name: total_segmentator
+    labels:
+      7: "pancreas"
+
+  - path: /home/anastasiia/MasterThesis/internal_data/T1_Post-Contrast_3D_masks/staple
+    name: staple
+    labels:
+      1: "pancreas"

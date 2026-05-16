@@ -29,6 +29,7 @@ def run_staple(images: list[sitk.Image], foreground_value: int | list[int] =1,
         combined_mask = sitk.Or(combined_mask, seg)
 
     label_stats = sitk.LabelShapeStatisticsImageFilter()
+    
     label_stats.Execute(combined_mask)
     
     if not label_stats.HasLabel(1):
@@ -47,6 +48,7 @@ def run_staple(images: list[sitk.Image], foreground_value: int | list[int] =1,
 
     staple_filter = sitk.STAPLEImageFilter()
     staple_filter.SetForegroundValue(1)
+    staple_filter.SetMaximumIterations(100)
     probability_map = staple_filter.Execute(cropped_segs)
     cropped_consensus = sitk.Cast(probability_map > 0.5, sitk.sitkUInt8)
 
@@ -116,6 +118,11 @@ def main(config_file):
     save_statistics = config.get("save_statistics", False)
     global_stats = {}
     for filename, paths in segmentation_paths.items():
+        output_path = os.path.join(config["output_folder"], filename)
+        if os.path.exists(output_path):
+            if verbose:
+                print(f"Output for {filename} already exists at {output_path}. Skipping...")
+            continue
         try:
             if verbose:
                 print(f"Processing {filename} with {len(paths)} segmentations...")
@@ -125,7 +132,7 @@ def main(config_file):
                 global_stats[filename] = {segmentation_name: stat for segmentation_name, stat in zip(config['segmentations'].keys(), stats.values())}
             else:
                 consensus_mask = run_staple(images, foreground_value=foreground_values, verbose=verbose, save_statistics=save_statistics)
-            output_path = os.path.join(config["output_folder"], filename)
+            
             sitk.WriteImage(consensus_mask, output_path)
             if verbose:
                 print(f"Saved consensus segmentation to {output_path}")

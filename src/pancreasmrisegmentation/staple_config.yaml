@@ -31,32 +31,23 @@ segmentations:
   #   path: /home/anastasiia/MasterThesis/PancreasMRISegmentation/results1/pansegnet_t1/pansegnet_t2
   #   label: 1
 
-  mri_segmenter0:
-    path: /home/anastasiia/MasterThesis/PancreasMRISegmentation/results1/mri_segmenter0
-    predictor: nnUNetv2
+  data1:
+    path: /home/anastasiia/MasterThesis/internal_data/T1_Pre-Contrast_3D_masks/mr_segmentator
+    label: 7
+
+  data2: 
+    path: /home/anastasiia/MasterThesis/internal_data/T1_Pre-Contrast_3D_masks/mri_segmenter
     label: 11
+  
+  data3:
+    path: /home/anastasiia/MasterThesis/internal_data/T1_Pre-Contrast_3D_masks/pansegnet_t1
+    label: 1
 
-  mri_segmenter1:
-    path: /home/anastasiia/MasterThesis/PancreasMRISegmentation/results1/mri_segmenter1
-    predictor: nnUNetv2
-    label: 11
-
-  mri_segmenter2:
-    path: /home/anastasiia/MasterThesis/PancreasMRISegmentation/results1/mri_segmenter2
-    predictor: nnUNetv2
-    label: 11 
-
-  mri_segmenter3:
-    path: /home/anastasiia/MasterThesis/PancreasMRISegmentation/results1/mri_segmenter3
-    predictor: nnUNetv2
-    label: 11 
-
-  mri_segmenter4:
-    path: /home/anastasiia/MasterThesis/PancreasMRISegmentation/results1/mri_segmenter4
-    predictor: nnUNetv2
-    label: 11
+  data4:
+    path: /home/anastasiia/MasterThesis/internal_data/T1_Pre-Contrast_3D_masks/total_segmentator
+    label: 7
 
 verbose: true
 save_statistics: true
-output_folder: /home/anastasiia/MasterThesis/PancreasMRISegmentation/results1/staple/panther_mri_segmenter
-strategy: intersection
+output_folder: /home/anastasiia/MasterThesis/internal_data/T1_Pre-Contrast_3D_masks/staple
+strategy: union

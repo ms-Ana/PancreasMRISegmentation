@@ -8,67 +8,139 @@ import yaml
 import os
 import argparse
 import pandas as pd
-from skimage.color import label2rgb
+import math
 from functools import lru_cache
+from tqdm import tqdm
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--config", type=str, default="config.yaml")
 parser.add_argument("--exclude", type=str, default="excluded_dataset.csv")
+parser.add_argument("--batch-size", type=int, default=60, help="Number of images per page")
 try:
     args = parser.parse_args()
 except SystemExit:
-    class Args: config, exclude = "config.yaml", "excluded_dataset.csv"
+    class Args: config, exclude, batch_size = "config.yaml", "excluded_dataset.csv", 60
     args = Args()
 
 with open(args.config, 'r') as f:
     config = yaml.safe_load(f)
 
 DATA_PATH = config["data_path"]
-SEG_CONFIG = config["segmentations"][0] 
-COLORS = {"1": (1, 0, 0), "2": (0, 1, 0), "3": (0, 0, 1), "4": (1, 1, 0)}
+SEG_CONFIGS = config["segmentations"]
 
-@lru_cache(maxsize=100)
-def load_and_sample_volume(img_path, seg_path, num_slices=10):
+def hex_to_rgb(hex_col):
+    hex_col = hex_col.lstrip('#')
+    return tuple(int(hex_col[i:i+2], 16) / 255.0 for i in (0, 2, 4))
+
+# 1. PARSE CONFIG INTO DISCRETE "ENTITIES"
+has_multiple_methods = len(SEG_CONFIGS) > 1
+has_multiple_labels = any(
+    len([k for k, v in c["labels"].items() if str(v).lower() != "background" and str(k) != "0"]) > 1 
+    for c in SEG_CONFIGS
+)
+
+ENTITIES = []
+for seg in SEG_CONFIGS:
+    method_name = seg["name"]
+    for label_val, label_name in seg["labels"].items():
+        if str(label_name).lower() == "background" or str(label_val) == "0":
+            continue
+            
+        if has_multiple_methods and has_multiple_labels:
+            disp_name = f"{method_name} ({label_name})"
+        elif has_multiple_methods:
+            disp_name = method_name
+        else:
+            disp_name = label_name
+
+        ENTITIES.append({
+            "id": f"{method_name}::{label_val}",
+            "display_name": disp_name,
+            "method": method_name,
+            "label_val": int(label_val),
+            "label_name": label_name,
+            "path": seg.get("path")
+        })
+
+palette = px.colors.qualitative.Alphabet
+ENTITY_COLORS = {}
+for i, ent in enumerate(ENTITIES):
+    ENTITY_COLORS[ent["id"]] = hex_to_rgb(palette[i % len(palette)])
+
+@lru_cache(maxsize=args.batch_size + 10)
+def load_and_sample_volume(img_path, filename, num_slices=10):
     vol = nib.load(img_path).get_fdata()
-    seg = nib.load(seg_path).get_fdata().astype(np.uint8)
     
     p2, p98 = np.percentile(vol, (2, 98))
     vol_norm = np.clip((vol - p2) / (p98 - p2 + 1e-8), 0, 1)
     
-    valid_slices = np.where(seg.any(axis=(0, 1)))[0]
+    segs = {}
+    union_mask = np.zeros(vol.shape, dtype=bool)
     
-    if len(valid_slices) == 0:
+    for seg_cfg in SEG_CONFIGS:
+        method_name = seg_cfg["name"]
+        seg_name = filename.replace("_0000.nii.gz", ".nii.gz")
+        seg_path = os.path.join(seg_cfg["path"], seg_name)
+        
+        if os.path.exists(seg_path):
+            seg_data = nib.load(seg_path).get_fdata().astype(np.uint8)
+            segs[method_name] = seg_data
+            
+            for label_val, label_name in seg_cfg["labels"].items():
+                if str(label_name).lower() != "background" and str(label_val) != "0":
+                    union_mask |= (seg_data == int(label_val))
+        else:
+            segs[method_name] = np.zeros_like(vol, dtype=np.uint8)
+            
+    valid_slices = np.where(union_mask.any(axis=(0, 1)))[0]
+    total_valid = len(valid_slices) 
+    
+    if total_valid == 0:
         mid = vol.shape[2] // 2
         selected_indices = np.arange(mid - num_slices//2, mid + num_slices//2)
-    elif len(valid_slices) <= num_slices:
+    elif total_valid <= num_slices:
         selected_indices = valid_slices
     else:
         selected_indices = np.linspace(valid_slices[0], valid_slices[-1], num_slices, dtype=int)
         
-    return vol_norm[:, :, selected_indices], seg[:, :, selected_indices], selected_indices
-
-def create_plotly_figure(vol_subset, seg_subset, active_labels):
-    vol_z = np.transpose(vol_subset, (2, 0, 1))
-    seg_z = np.transpose(seg_subset, (2, 0, 1))
+    vol_sub = vol_norm[:, :, selected_indices]
+    segs_sub = {name: data[:, :, selected_indices] for name, data in segs.items()}
     
+    return vol_sub, segs_sub, tuple(selected_indices), total_valid
+
+def create_plotly_figure(vol_subset, segs_subset, active_entity_ids):
+    vol_z = np.transpose(vol_subset, (2, 0, 1))
     vol_z = np.rot90(vol_z, k=1, axes=(1, 2))
-    seg_z = np.rot90(seg_z, k=1, axes=(1, 2))
     
     Z, H, W = vol_z.shape
     blended_rgb = np.zeros((Z, H, W, 3), dtype=np.float32)
     
+    segs_z = {}
+    for name, data in segs_subset.items():
+        z_data = np.transpose(data, (2, 0, 1))
+        segs_z[name] = np.rot90(z_data, k=1, axes=(1, 2))
+        
     for z in range(Z):
-        mask = np.zeros_like(seg_z[z])
-        for val in active_labels:
-            if int(val) in seg_z[z]:
-                mask[seg_z[z] == int(val)] = int(val)
+        base_img = np.stack((vol_z[z],)*3, axis=-1)
+        
+        for ent_id in active_entity_ids:
+            ent = next((e for e in ENTITIES if e["id"] == ent_id), None)
+            if not ent: continue
+            
+            method_name = ent["method"]
+            label_val = ent["label_val"]
+            
+            if method_name not in segs_z: continue
+            
+            mask_data = segs_z[method_name][z]
+            bool_mask = (mask_data == label_val)
                 
-        if np.any(mask):
-            unique_labels = np.unique(mask)[1:] 
-            slice_colors = [COLORS[str(l)] for l in unique_labels]
-            blended_rgb[z] = label2rgb(mask, image=vol_z[z], colors=slice_colors, alpha=0.4, bg_label=0)
-        else:
-            blended_rgb[z] = np.stack((vol_z[z],)*3, axis=-1)
+            if np.any(bool_mask):
+                color = ENTITY_COLORS[ent_id]
+                alpha = 0.4
+                base_img[bool_mask] = base_img[bool_mask] * (1 - alpha) + np.array(color) * alpha
+                
+        blended_rgb[z] = base_img
 
     fig = px.imshow(blended_rgb, animation_frame=0)
     
@@ -93,78 +165,145 @@ def create_plotly_figure(vol_subset, seg_subset, active_labels):
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.FLATLY])
 
 image_files = sorted([f for f in os.listdir(DATA_PATH) if f.endswith(('.nii', '.nii.gz'))])
+TOTAL_PAGES = max(1, math.ceil(len(image_files) / args.batch_size))
 
-excluded_set = set()
-if os.path.exists(args.exclude):
-    excluded_df = pd.read_csv(args.exclude)
-    excluded_set = set(excluded_df['filename'].values)
-
+# Setup unified checklist options for ENTITIES
 checklist_options = []
-for val, name in SEG_CONFIG['labels'].items():
-    rgb_color = COLORS[str(val)]
+all_entity_ids = []
+for ent in ENTITIES:
+    ent_id = ent["id"]
+    all_entity_ids.append(ent_id)
+    rgb_color = ENTITY_COLORS[ent_id]
     css_color = f"rgb({int(rgb_color[0]*255)}, {int(rgb_color[1]*255)}, {int(rgb_color[2]*255)})"
+    
     label_component = html.Span([
         html.Span(style={
             "backgroundColor": css_color, "width": "12px", "height": "12px", 
             "display": "inline-block", "marginRight": "4px", "marginLeft": "8px", 
             "verticalAlign": "middle", "borderRadius": "2px", "border": "1px solid #ccc"
         }),
-        html.Span(name, style={"verticalAlign": "middle", "fontSize": "12px"})
+        html.Span(ent["display_name"], style={"verticalAlign": "middle", "fontSize": "12px"})
     ])
-    checklist_options.append({'label': label_component, 'value': str(val)})
+    checklist_options.append({'label': label_component, 'value': ent_id})
 
-initial_cards = []
-for filename in image_files:
-    img_path = os.path.join(DATA_PATH, filename)
-    seg_path = os.path.join(SEG_CONFIG["path"], filename.replace("_0000.nii.gz", ".nii.gz"))
-    
-    is_excluded = filename in excluded_set
-    card_style = {'opacity': '0.4', 'transition': 'opacity 0.3s'} if is_excluded else {'opacity': '1.0', 'transition': 'opacity 0.3s'}
-    btn_text = "↩️ Include" if is_excluded else "❌ Exclude"
-    btn_color = "success" if is_excluded else "danger"
-    
-    try:
-        vol_sub, seg_sub, z_indices = load_and_sample_volume(img_path, seg_path)
-        all_labels = [str(k) for k in SEG_CONFIG['labels'].keys()]
-        fig = create_plotly_figure(vol_sub, seg_sub, all_labels)
-        
-        card = dbc.Col([
-            dbc.Card([
-                dbc.CardHeader(
-                    html.Div([
-                        html.Span(filename[:25] + "..." if len(filename)>25 else filename, style={"fontWeight": "bold"}),
-                        dbc.Button(btn_text, id={'type': 'btn-exclude', 'index': filename}, color=btn_color, size="sm", className="float-end")
-                    ])
-                ),
-                dbc.CardBody([
-                    html.Div(
-                        dcc.Checklist(
-                            id={'type': 'local-seg-toggle', 'index': filename},
-                            options=checklist_options,
-                            value=all_labels,
-                            inline=True,
-                            labelStyle={"display": "inline-flex", "alignItems": "center", "cursor": "pointer"}
-                        ), className="text-center mb-1"
-                    ),
-                    dcc.Graph(
-                        id={'type': 'graph', 'index': filename}, 
-                        figure=fig, config={'displayModeBar': False}, style={"height": "350px"}
-                    )
-                ], className="p-2"),
-                dbc.CardFooter(f"Showing Z-slices: {z_indices[0]} to {z_indices[-1]}", style={"fontSize": "10px", "padding": "5px 10px"})
-            ], id={'type': 'card', 'index': filename}, className="mb-4 shadow-sm", style=card_style)
-        ], width=4) 
-        
-        initial_cards.append(card)
-    except Exception as e:
-        print(f"Failed to load {filename}: {e}")
 
 app.layout = html.Div([
+    dcc.Store(id='page-store', data=1), # Track current page
+    
     dbc.Container([
-        dbc.Row(dbc.Col(html.H2("Quality Assurance Viewer"), width=12, className="py-3", style={"color": "#f8f9fa", "textAlign": "center"})),
-        dbc.Row(initial_cards, id='image-grid')
+        dbc.Row([
+            dbc.Col(html.H2(f"Quality Assurance Viewer ({len(image_files)} Scans)"), width=6, style={"color": "#f8f9fa", "textAlign": "left"}),
+            
+            # Pagination Controls
+            dbc.Col([
+                dbc.ButtonGroup([
+                    dbc.Button("⬅️ Previous", id="btn-prev", outline=True, color="light"),
+                    dbc.Button(id="page-indicator", disabled=True, color="secondary", style={"color": "white", "fontWeight": "bold"}),
+                    dbc.Button("Next ➡️", id="btn-next", outline=True, color="light"),
+                ], className="float-end")
+            ], width=6, className="align-self-center")
+        ], className="py-3"),
+        
+        # Wrapped grid in a loader for page transitions
+        dcc.Loading(
+            id="loading-grid",
+            type="dot",
+            color="#f8f9fa",
+            children=[dbc.Row(id='image-grid')]
+        )
     ], fluid=True)
 ], style={"backgroundColor": "#1c2833", "minHeight": "100vh", "paddingBottom": "20px"})
+
+
+# --- CALLBACKS ---
+
+@app.callback(
+    [Output('page-store', 'data'),
+     Output('btn-prev', 'disabled'),
+     Output('btn-next', 'disabled'),
+     Output('page-indicator', 'children')],
+    [Input('btn-prev', 'n_clicks'),
+     Input('btn-next', 'n_clicks')],
+    [State('page-store', 'data')],
+    prevent_initial_call=False
+)
+def update_pagination(prev_clicks, next_clicks, current_page):
+    trigger = ctx.triggered_id
+    
+    if trigger == 'btn-next' and current_page < TOTAL_PAGES:
+        current_page += 1
+    elif trigger == 'btn-prev' and current_page > 1:
+        current_page -= 1
+        
+    prev_disabled = (current_page == 1)
+    next_disabled = (current_page == TOTAL_PAGES)
+    indicator_text = f"Page {current_page} of {TOTAL_PAGES}"
+    
+    return current_page, prev_disabled, next_disabled, indicator_text
+
+@app.callback(
+    Output('image-grid', 'children'),
+    Input('page-store', 'data')
+)
+def render_page_grid(current_page):
+    start_idx = (current_page - 1) * args.batch_size
+    end_idx = start_idx + args.batch_size
+    batch_files = image_files[start_idx:end_idx]
+    
+    excluded_set = set()
+    if os.path.exists(args.exclude):
+        excluded_df = pd.read_csv(args.exclude)
+        excluded_set = set(excluded_df['filename'].values)
+        
+    cards = []
+    for filename in batch_files:
+        img_path = os.path.join(DATA_PATH, filename)
+        
+        is_excluded = filename in excluded_set
+        card_style = {'opacity': '0.4', 'transition': 'opacity 0.3s'} if is_excluded else {'opacity': '1.0', 'transition': 'opacity 0.3s'}
+        btn_text = "↩️ Include" if is_excluded else "❌ Exclude"
+        btn_color = "success" if is_excluded else "danger"
+        
+        try:
+            vol_sub, segs_sub, z_indices, total_valid = load_and_sample_volume(img_path, filename) 
+            fig = create_plotly_figure(vol_sub, segs_sub, all_entity_ids)
+            
+            card = dbc.Col([
+                dbc.Card([
+                    dbc.CardHeader(
+                        html.Div([
+                            html.Span(filename[:25] + "..." if len(filename)>25 else filename, style={"fontWeight": "bold"}),
+                            dbc.Button(btn_text, id={'type': 'btn-exclude', 'index': filename}, color=btn_color, size="sm", className="float-end")
+                        ])
+                    ),
+                    dbc.CardBody([
+                        html.Div(
+                            dcc.Checklist(
+                                id={'type': 'local-seg-toggle', 'index': filename},
+                                options=checklist_options,
+                                value=all_entity_ids, 
+                                inline=True,
+                                labelStyle={"display": "inline-flex", "alignItems": "center", "cursor": "pointer", "marginRight": "10px", "marginBottom": "5px"}
+                            ), className="text-center mb-1", style={"display": "flex", "flexWrap": "wrap", "justifyContent": "center"}
+                        ),
+                        dcc.Graph(
+                            id={'type': 'graph', 'index': filename}, 
+                            figure=fig, config={'displayModeBar': False}, style={"height": "350px"}
+                        )
+                    ], className="p-2"),
+                    dbc.CardFooter(
+                        f"Showing slices: {z_indices[0]} to {z_indices[-1]} | Total masked slices: {total_valid}", 
+                        style={"fontSize": "11px", "padding": "5px 10px", "textAlign": "center"}
+                    )
+                ], id={'type': 'card', 'index': filename}, className="mb-4 shadow-sm", style=card_style)
+            ], width=6) 
+            
+            cards.append(card)
+        except Exception as e:
+            print(f"Failed to load {filename}: {e}")
+            
+    return cards
+
 
 @app.callback(
     Output({'type': 'graph', 'index': MATCH}, 'figure'),
@@ -172,12 +311,13 @@ app.layout = html.Div([
     State({'type': 'graph', 'index': MATCH}, 'id'),
     prevent_initial_call=True
 )
-def update_single_graph(active_labels, graph_id):
+def update_single_graph(active_entity_ids, graph_id):
     filename = graph_id['index']
     img_path = os.path.join(DATA_PATH, filename)
-    seg_path = os.path.join(SEG_CONFIG["path"], filename.replace("_0000.nii.gz", ".nii.gz"))
-    vol_sub, seg_sub, _ = load_and_sample_volume(img_path, seg_path)
-    return create_plotly_figure(vol_sub, seg_sub, active_labels)
+    
+    vol_sub, segs_sub, _, _ = load_and_sample_volume(img_path, filename) 
+    
+    return create_plotly_figure(vol_sub, segs_sub, active_entity_ids)
 
 @app.callback(
     [Output({'type': 'card', 'index': MATCH}, 'style'),

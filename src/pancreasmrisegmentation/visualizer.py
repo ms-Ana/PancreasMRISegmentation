@@ -32,7 +32,7 @@ def hex_to_rgb(hex_col):
     hex_col = hex_col.lstrip('#')
     return tuple(int(hex_col[i:i+2], 16) / 255.0 for i in (0, 2, 4))
 
-# 1. PARSE CONFIG INTO DISCRETE "ENTITIES"
+
 has_multiple_methods = len(SEG_CONFIGS) > 1
 has_multiple_labels = any(
     len([k for k, v in c["labels"].items() if str(v).lower() != "background" and str(k) != "0"]) > 1 
@@ -167,7 +167,7 @@ app = dash.Dash(__name__, external_stylesheets=[dbc.themes.FLATLY])
 image_files = sorted([f for f in os.listdir(DATA_PATH) if f.endswith(('.nii', '.nii.gz'))])
 TOTAL_PAGES = max(1, math.ceil(len(image_files) / args.batch_size))
 
-# Setup unified checklist options for ENTITIES
+
 checklist_options = []
 all_entity_ids = []
 for ent in ENTITIES:
@@ -186,36 +186,39 @@ for ent in ENTITIES:
     ])
     checklist_options.append({'label': label_component, 'value': ent_id})
 
-
 app.layout = html.Div([
-    dcc.Store(id='page-store', data=1), # Track current page
+    dcc.Store(id='page-store', data=1), 
     
     dbc.Container([
         dbc.Row([
-            dbc.Col(html.H2(f"Quality Assurance Viewer ({len(image_files)} Scans)"), width=6, style={"color": "#f8f9fa", "textAlign": "left"}),
-            
-            # Pagination Controls
-            dbc.Col([
-                dbc.ButtonGroup([
-                    dbc.Button("⬅️ Previous", id="btn-prev", outline=True, color="light"),
-                    dbc.Button(id="page-indicator", disabled=True, color="secondary", style={"color": "white", "fontWeight": "bold"}),
-                    dbc.Button("Next ➡️", id="btn-next", outline=True, color="light"),
-                ], className="float-end")
-            ], width=6, className="align-self-center")
+            dbc.Col(
+                html.H2(f"Quality Assurance Viewer ({len(image_files)} Scans)"), 
+                width=12, 
+                style={"color": "#f8f9fa", "textAlign": "left"}
+            ),
         ], className="py-3"),
         
-        # Wrapped grid in a loader for page transitions
         dcc.Loading(
             id="loading-grid",
             type="dot",
             color="#f8f9fa",
             children=[dbc.Row(id='image-grid')]
-        )
+        ),
+
+        dbc.Row([
+            dbc.Col([
+                dbc.ButtonGroup([
+                    dbc.Button("⬅️ Previous", id="btn-prev", outline=True, color="light"),
+                    dbc.Button(id="page-indicator", disabled=True, color="secondary", style={"color": "white", "fontWeight": "bold"}),
+                    dbc.Button("Next ➡️", id="btn-next", outline=True, color="light"),
+                ])
+            ], width=12, className="d-flex justify-content-center mt-4 mb-5") 
+        ])
+        
     ], fluid=True)
 ], style={"backgroundColor": "#1c2833", "minHeight": "100vh", "paddingBottom": "20px"})
 
 
-# --- CALLBACKS ---
 
 @app.callback(
     [Output('page-store', 'data'),

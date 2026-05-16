@@ -1,0 +1,62 @@
+segmentations:
+  # umamba_nnunet:
+  #   path: /home/anastasiia/MasterThesis/PancreasMRISegmentation/results1/umamba_nnunet/panther
+  #   label: 4
+  # umamba_swinunetr:
+  #   path: /home/anastasiia/MasterThesis/PancreasMRISegmentation/results1/umamba_swinunetr/panther
+  #   label: 4
+  # umamba_segresnet:
+  #   path: /home/anastasiia/MasterThesis/PancreasMRISegmentation/results1/umamba_segresnet/panther
+  #   label: 4    
+  # umamba_bot:
+  #   path: /home/anastasiia/MasterThesis/PancreasMRISegmentation/results1/umamba_bot/panther
+  #   label: 4
+  # umamba_enc:
+  #   path: /home/anastasiia/MasterThesis/PancreasMRISegmentation/results1/umamba_enc/panther
+  #   label: 4
+
+  # total_segmentator:
+  #   path: /home/anastasiia/MasterThesis/PancreasMRISegmentation/results1/total_segmentator/pansegnet_t2
+  #   label: 7
+
+  # mri_segmenter:
+  #   path: /home/anastasiia/MasterThesis/PancreasMRISegmentation/results1/mri_segmenter/pansegnet_t2
+  #   label: 11
+
+  # mr_segmentator:
+  #   path: /home/anastasiia/MasterThesis/PancreasMRISegmentation/results1/mr_segmentator/pansegnet_t2
+  #   label: 7
+
+  # pansegnet_t1:
+  #   path: /home/anastasiia/MasterThesis/PancreasMRISegmentation/results1/pansegnet_t1/pansegnet_t2
+  #   label: 1
+
+  mri_segmenter0:
+    path: /home/anastasiia/MasterThesis/PancreasMRISegmentation/results1/mri_segmenter0
+    predictor: nnUNetv2
+    label: 11
+
+  mri_segmenter1:
+    path: /home/anastasiia/MasterThesis/PancreasMRISegmentation/results1/mri_segmenter1
+    predictor: nnUNetv2
+    label: 11
+
+  mri_segmenter2:
+    path: /home/anastasiia/MasterThesis/PancreasMRISegmentation/results1/mri_segmenter2
+    predictor: nnUNetv2
+    label: 11 
+
+  mri_segmenter3:
+    path: /home/anastasiia/MasterThesis/PancreasMRISegmentation/results1/mri_segmenter3
+    predictor: nnUNetv2
+    label: 11 
+
+  mri_segmenter4:
+    path: /home/anastasiia/MasterThesis/PancreasMRISegmentation/results1/mri_segmenter4
+    predictor: nnUNetv2
+    label: 11
+
+verbose: true
+save_statistics: true
+output_folder: /home/anastasiia/MasterThesis/PancreasMRISegmentation/results1/staple/panther_mri_segmenter
+strategy: intersection

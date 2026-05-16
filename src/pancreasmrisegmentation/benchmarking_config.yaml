@@ -1,71 +1,112 @@
 datasets:
   panther:
-    path: 
-    labels: 
-    label: 2
+    path: /home/anastasiia/MasterThesis/external_data/Imaging/Panther
+    labels: /home/anastasiia/MasterThesis/external_data/Imaging/Panther/nnUNet_raw/Dataset090_PantherTask1/labelsTr
     
-  amos22:
-    path: 
-    labels: 
-    label: 10
-
-  mrisegmenter:
-    path: 
-    labels: 
-    label: 11
+  # amos22:
+  #   path: /home/anastasiia/MasterThesis/external_data/Imaging/AMOS22/imagesVa
+  #   labels: /home/anastasiia/MasterThesis/external_data/Imaging/AMOS22/labelsVa
     
-  totalsegmentator:
-    path: 
-    labels:
-    label: 12
+  # mrisegmenter:
+  #   path: /home/anastasiia/MasterThesis/external_data/Imaging/MRISegmenter/ImageTs
+  #   labels: /home/anastasiia/MasterThesis/external_data/Imaging/MRISegmenter/labelsTs
     
-    pansegnet_t2:
-      path: 
-      labels: 
-      label: 1
-
+  # totalsegmentator:
+  #   path: 
+  #   labels:
+    
+    # pansegnet_t2:
+    #   path: /home/anastasiia/MasterThesis/external_data/Imaging/PanSegData/Pancreas_MRI_Dataset/t2/imagesTr
+    #   labels: /home/anastasiia/MasterThesis/external_data/Imaging/PanSegData/Pancreas_MRI_Dataset/t2/labelsTr
+  
 models:
 
   umamba_nnunet:
-    predictor: nnUNetv2
-    label: 4
   umamba_swinunetr:
-    predictor: umamba
-    label: 4
-  umamba_segresnet:
-    predictor: umamba
-    label: 4    
+  umamba_segresnet: 
   umamba_bot:
-    predictor: umamba
-    label: 4
   umamba_enc:
-    predictor: umamba
-    label: 4
 
   total_segmentator:
-    predictor: nnUNetv2
-    label: 7
 
   mri_segmenter:
-    predictor: nnUNetv2
-    label: 11
 
-  mri_segmentator:
-    predictor: nnUNetv2
-    label: 7
+
+  mr_segmentator:
 
   pansegnet_t1:
-    predictor: nnUNetv1
-    label: 1
   pansegnet_t2:
-    predictor: nnUNetv1
-    label: 1
 
 
   voxtell:
-    predictor: voxtell
+
+  # mri_segmenter0:
+  #   path: /home/anastasiia/MasterThesis/PancreasMRISegmentation/results1/mri_segmenter0
+  #   predictor: nnUNetv2
+  #   label: 11
+
+  # mri_segmenter1:
+  #   path: /home/anastasiia/MasterThesis/PancreasMRISegmentation/results1/mri_segmenter1
+  #   predictor: nnUNetv2
+  #   label: 11
+
+  # mri_segmenter2:
+  #   path: /home/anastasiia/MasterThesis/PancreasMRISegmentation/results1/mri_segmenter2
+  #   predictor: nnUNetv2
+  #   label: 11 
+
+  # mri_segmenter3:
+  #   path: /home/anastasiia/MasterThesis/PancreasMRISegmentation/results1/mri_segmenter3
+  #   predictor: nnUNetv2
+  #   label: 11 
+
+  # mri_segmenter4:
+  #   path: /home/anastasiia/MasterThesis/PancreasMRISegmentation/results1/mri_segmenter4
+  #   predictor: nnUNetv2
+  #   label: 11
+
+  # mr_segmentator0:
+  #   path: /home/anastasiia/MasterThesis/PancreasMRISegmentation/results1/mr_segmentator0
+  #   predictor: nnUNetv2
+  #   label: 7
+
+  # mr_segmentator1:
+  #   path: /home/anastasiia/MasterThesis/PancreasMRISegmentation/results1/mr_segmentator1
+  #   predictor: nnUNetv2
+  #   label: 7
+
+  # mr_segmentator2:
+  #   path: /home/anastasiia/MasterThesis/PancreasMRISegmentation/results1/mr_segmentator2
+  #   predictor: nnUNetv2
+  #   label: 7
+
+  # mr_segmentator3:
+  #   path: /home/anastasiia/MasterThesis/PancreasMRISegmentation/results1/mr_segmentator3
+  #   predictor: nnUNetv2
+  #   label: 7
+
+  # mr_segmentator4:
+  #   path: /home/anastasiia/MasterThesis/PancreasMRISegmentation/results1/mr_segmentator4
+  #   predictor: nnUNetv2
+  #   label: 7
+    
+
+  
+  # staple_top_3_total:
+  #   path: /home/anastasiia/MasterThesis/PancreasMRISegmentation/results1/staple/amos22_top_3_total
+  #   predictor: staple
+  #   label: 1
+  staple_mri_segmenter:
+    path: /home/anastasiia/MasterThesis/PancreasMRISegmentation/results1/staple/panther_mri_segmenter
+    predictor: staple
     label: 1
-  
-  
+  # staple_top_2:
+  #   path: /home/anastasiia/MasterThesis/PancreasMRISegmentation/results1/staple/pansegnet_t2_top_2
+  #   predictor: staple
+  #   label: 1
+  # staple_top_4:
+  #   path: /home/anastasiia/MasterThesis/PancreasMRISegmentation/results1/staple/amos22_top_4
+  #   predictor: staple
+  #   label: 1
 
 device: cuda

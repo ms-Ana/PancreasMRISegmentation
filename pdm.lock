@@ -5,7 +5,7 @@
 groups = ["default", "all", "umamba"]
 strategy = []
 lock_version = "4.5.0"
-content_hash = "sha256:f1057d8f06bf6a6a1ef4a3c4303eb3afdb544bde74ccd8bff446b53a92061543"
+content_hash = "sha256:9ec6cb5efb60ebe56a38704e8b008f09d3632634f4b9c97f700d1ffbfa180375"
 
 [[metadata.targets]]
 requires_python = ">=3.12,<3.15"
@@ -3418,6 +3418,16 @@ dependencies = [
 files = [
     {file = "sympy-1.14.0-py3-none-any.whl", hash = "sha256:e091cc3e99d2141a0ba2847328f5479b05d94a6635cb96148ccb3f34671bd8f5"},
     {file = "sympy-1.14.0.tar.gz", hash = "sha256:d3d3fe8df1e5a0b42f0e7bdf50541697dbe7d23746e894990c030e2b05e72517"},
+]
+
+[[package]]
+name = "tabulate"
+version = "0.10.0"
+requires_python = ">=3.10"
+summary = "Pretty-print tabular data"
+files = [
+    {file = "tabulate-0.10.0-py3-none-any.whl", hash = "sha256:f0b0622e567335c8fabaaa659f1b33bcb6ddfe2e496071b743aa113f8774f2d3"},
+    {file = "tabulate-0.10.0.tar.gz", hash = "sha256:e2cfde8f79420f6deeffdeda9aaec3b6bc5abce947655d17ac662b126e48a60d"},
 ]
 
 [[package]]

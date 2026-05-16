@@ -10,6 +10,7 @@ from pancreasmrisegmentation.utils.utilities import (
     define_device,
     define_available_folds,
 )
+from pancreasmrisegmentation.utils.settings import MODEL_SETTINGS
 
 
 @click.command()
@@ -25,6 +26,9 @@ def benchmarking(config: str):
     device = define_device(conf.device)
 
     for model_name, model in conf.models.items():
+        model_predictor = model.predictor if "predictor" in model else MODEL_SETTINGS[model_name]["predictor"] if model_name in MODEL_SETTINGS else None
+        if not model_predictor:
+            raise AttributeError("Either model from default models should be used or 'predictor' should be specified.")
         predictor = nnUNetPredictorWrapper(
             tile_step_size=0.5,
             use_gaussian=True,
@@ -34,7 +38,7 @@ def benchmarking(config: str):
             verbose=False,
             allow_tqdm=True,
             verbose_preprocessing=False,
-            predictor=model.predictor,
+            predictor=model_predictor,
         )
 
         model_path = (

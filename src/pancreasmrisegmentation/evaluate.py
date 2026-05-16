@@ -74,7 +74,7 @@ def find_file(directory, subject, allowed_extensions=ALLOWED_EXTENSIONS):
 
 
 def evaluate_segmentation_performance(
-    pred_dir, gt_dir, label: int, dataset_label: int, subject_list=None, verbose=False, 
+    pred_dir, gt_dir, label: int | list[int], dataset_label: int | list[int] | None, subject_list=None, verbose=False, 
 ):
     """
     Evaluates segmentation metrics for all subjects.
@@ -137,8 +137,15 @@ def evaluate_segmentation_performance(
         # Convert ground truth mask to uint8.
         mask_gt = mask_gt.astype(np.uint8)
         if dataset_label is not None:
-            mask_gt = np.where(mask_gt == dataset_label, 1, 0)  # Binary mask for the specified label.
-        mask_pred = np.where(mask_pred == label, 1, 0)  # Binary mask for the specified label.
+            if isinstance(dataset_label, list):
+                mask_gt = np.where(np.isin(mask_gt, dataset_label), 1, 0)
+            else:
+                mask_gt = np.where(mask_gt == dataset_label, 1, 0)
+        
+        if isinstance(label, list):
+            mask_pred = np.where(np.isin(mask_pred, label), 1, 0)
+        else:
+            mask_pred = np.where(mask_pred == label, 1, 0)  # Binary mask for the specified label.
 
         # Ensure prediction mask is binary.
         unique_vals = np.unique(mask_pred)
@@ -277,14 +284,16 @@ def evaluate_segmentation_performance(
 @click.option(
     "--label",
     type=int,
-    default=1,
+    multiple=True,
+    default=[1],
     help="The label value in the prediction masks to evaluate",
 )
 @click.option(
     "--dataset_label", 
     type=int,
-    default=1,
-    help="The label value in the ground truth masks to evaluate. If None, all nonzero values are considered foreground.",
+    multiple=True,
+    default=[1],
+    help="The label(labels) value in the ground truth masks to evaluate. If None, all nonzero values are considered foreground.",
 )
 @click.option(
     "--save_path",
@@ -293,7 +302,7 @@ def evaluate_segmentation_performance(
     help="Optional path to save the aggregated metrics as a JSON file",
 )
 @click.option("--verbose", is_flag=True, help="Enable verbose output")
-def main(pred_dir: str, gt_dir: str, subject_list: str, label: int, dataset_label: int, save_path: str, verbose: bool):
+def main(pred_dir: str, gt_dir: str, subject_list: str, label: int| list[int], dataset_label: int | list[int] | None, save_path: str, verbose: bool): 
     if subject_list is not None:
         if subject_list.endswith(".json"):
             with open(subject_list, "r") as fp:

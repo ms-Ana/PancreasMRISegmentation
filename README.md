@@ -171,4 +171,84 @@ If labels are mismatched between predictions and ground truth, metrics will be m
 
 ## Testing Results on the Panther Dataset (92 Cases)
 Data available: https://zenodo.org/records/15192302
-![](./assets/panther_results.png)
+| model_name         |   mean_volumetric_dice |   mean_surface_dice |   mean_hausdorff95 |   mean_masd |    rmse |
+|:-------------------|-----------------------:|--------------------:|-------------------:|------------:|--------:|
+| mr_segmentator     |         **0.817645**   |           0.918493  |           11.5811  |  **1.82541**| 38493.5 | 
+| mri_segmenter      |             0.796488   |           0.923081  |           12.9455  |     2.0095  |**29448.3**|
+| pansegnet_t1       |             0.789289   |         **0.935621**|         **10.7063**|     1.82616 | 32689.6 |
+| pansegnet_t2       |             0.00372444 |           0.0196079 |           695.92   |   646.54    | 95968.1 |
+| total_segmentator  |             0.708104   |           0.848722  |           17.1272  |     3.01063 | 45805.3 |
+| umamba_bot         |             0.733533   |           0.873526  |           17.6466  |     2.71619 | 35372.7 |
+| umamba_enc         |             0.737339   |           0.872953  |           18.8495  |     2.95857 | 32876.3 |
+| umamba_nnunet      |             0.719131   |           0.848584  |           20.7637  |     3.235   | 35188.3 |
+| umamba_segresnet   |             0.633627   |           0.785301  |           28.2919  |     4.80271 | 41404.6 |
+| umamba_swinunetr   |             0.591129   |           0.724034  |           38.7543  |     6.62151 | 41770.5 |
+|:-------------------|-----------------------:|--------------------:|-------------------:|------------:|--------:|
+| voxtell            |             0.239834   |           0.285989  |          229.355   |    94.1497  | 78338.8 |
+
+### STAPLE algorithm results (Panther)
+| model_name         |   mean_volumetric_dice |   mean_surface_dice |   mean_hausdorff95 |   mean_masd |    rmse |
+|:-------------------|-----------------------:|--------------------:|-------------------:|------------:|--------:|
+| staple(all)        |             0.801702   |           0.921682  |           13.1322  |     1.97725 | 30997.3 |
+| staple_2           |             0.794323   |           0.911073  |           12.0384  |     1.94826 | 40831.5 |
+| staple_3   		 |             0.834607   |           0.941814  |            9.46269 |     1.53    | 32749   |
+| staple_3_1         |             0.810652   |           0.918725  |           11.5169  |     1.82426 | 37501.6 |
+| staple_4           |             **0.835202**|        **0.943715**|          **9.11981**|  **1.50494**| **31866.9**|
+| staple_5           |             0.827393   |           0.941717  |            9.61874 |     1.57    | 29719.9 |
+| staple_6           |             0.818302   |           0.934624  |           11.4213  |     1.72059 | 30479.2 |
+* _2 - mri_segmenter, mr_segmentator
+* _3 - mri_segmenter, mr_segmentator, pansegnet_t1
+* _3_1 - mri_segmenter, mr_segmentator, total_segmentator
+* _4 - mri_segmenter, mr_segmentator, pansegnet_t1, total_segmentator
+* _5 - mri_segmenter, mr_segmentator, pansegnet_t1, total_segmentator, umamba_enc
+* _6 - mri_segmenter, mr_segmentator, pansegnet_t1, total_segmentator, umamba_enc, umamba_bot
+
+## MRI Segmenter
+| model_name         |   mean_volumetric_dice |   mean_surface_dice |   mean_hausdorff95 |   mean_masd |    rmse |
+|:-------------------|-----------------------:|--------------------:|-------------------:|------------:|--------:|
+| mri_segmenter      |             0.796488   |          0.923081   |           12.9455  |     2.0095  | 29448.3 |
+| mri_segmenter0     |             0.796154   |          0.92136    |           13.1898  |     2.02767 | **29100.1** |
+| mri_segmenter1     |             0.795457   |          0.92206    |           12.933   |     2.04953 | 29716.7 |
+| mri_segmenter2     |             0.794414   |          0.920105   |           13.1079  |     2.0212  | 29216.8 |
+| mri_segmenter3     |             0.792031   |          0.920704   |           13.1063  |     2.04918 | 29410.5 |
+| mri_segmenter4     |             0.793985   |        **0.92322**  |         **12.7224**|  **2.00333**| 30070.5 |
+| staple             |           **0.797045** |          0.922631   |           13.0177  |     2.0236  | 29451.9 |
+
+
+
+
+## AMOS 22 (Pancreas)
+| model_name        |   mean_volumetric_dice |   mean_surface_dice |   mean_hausdorff95 |   mean_masd |      rmse |
+|:------------------|-----------------------:|--------------------:|-------------------:|------------:|----------:|
+| mr_segmentator    |              0.782952  |           0.917004  |          16.4871   |    1.99039  | 23661.1   |
+| mri_segmenter     |            **0.876259**|         **0.973724**|        **12.5276** |  **1.23797**|**7186.54**|
+| pansegnet_t1      |              0.816202  |           0.946902  |          23.396    |    2.6684   |  9235.66  |
+| pansegnet_t2      |              0.0263096 |           0.0457698 |         558.959    |  447.907    | 73039.9   |
+| total_segmentator |              0.759583  |           0.888407  |          16.8997   |    2.21504  | 25201.8   |
+|:------------------|-----------------------:|--------------------:|-------------------:|------------:|----------:|
+| voxtell           |              0.851591  |           0.963806  |           4.98238  |    0.942215 |  9096.59  |
+
+### STAPLE 
+| model_name        |   mean_volumetric_dice |   mean_surface_dice |   mean_hausdorff95 |   mean_masd |      rmse |
+|:------------------|-----------------------:|--------------------:|-------------------:|------------:|----------:|
+| staple_2          |              0.77709   |           0.915644  |          16.5928   |    2.01525  | 25892.5   |
+| staple_3          |              0.870844  |           0.977078  |           4.844    |    0.764282 | 10941.9   |
+| staple_3_1        |              0.815165  |           0.936473  |          10.1575   |    1.38592  | 19914.9   |
+| staple_4          |            **0.875184**|         **0.977499**|         **4.77696**|  **0.745366**|**9217.79**|
+* _2 - mri_segmenter, mr_segmentator
+* _3 - mri_segmenter, mr_segmentator, pansegnet_t1
+* _3_1 - mri_segmenter, mr_segmentator, total_segmentator
+* _4 - mri_segmenter, mr_segmentator, pansegnet_t1, total_segmentator
+
+## PanSegData (T2)
+| model_name        |   mean_volumetric_dice |   mean_surface_dice |   mean_hausdorff95 |   mean_masd |    rmse |
+|:------------------|-----------------------:|--------------------:|-------------------:|------------:|--------:|
+| mr_segmentator    |          **0.42257**   |       **0.582964**  |         **224.999**|    **139.861**  | **64171.7** |
+| mri_segmenter     |            0.00174548  |         0.0284116   |          1101.09   |    986.631  | 84616   |
+| pansegnet_t1      |            0.000773926 |         0.022873    |          1107.24   |    999.331  | 86943.7 |
+| total_segmentator |            0.235993    |         0.393382    |           354.533  |    251.409  | 76186.4 |
+| umamba_nnunet     |            0.00109078  |         0.00880882  |          1545.26   |   1507.23   | 87842.8 |
+| umamba_segresnet  |            0           |         2.32252e-05 |          1711.8    |   1711.15   | 89683.9 |
+| umamba_swinunetr  |            0.000402111 |         0.0097217   |          1083.79   |    973.307  | 87861.5 |
+|:------------------|-----------------------:|--------------------:|-------------------:|------------:|--------:|
+| voxtell           |            0.750038    |         0.941298    |            15.2476 |      1.8899 | 14156.4 |

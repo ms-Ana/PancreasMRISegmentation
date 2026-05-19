@@ -6,7 +6,7 @@ import numpy as np
 import SimpleITK as sitk
 import json
 from tqdm import tqdm
-
+import nibabel as nib
 
 ## AMOS 22 dataset has no channel dimension, but nnUNet expects one. This function adds the channel dimension to the file name, so that nnUNet can read the files correctly.
 def add_channel_dimension_to_file_name(
@@ -114,6 +114,21 @@ def convert_mha_folder_to_nii(input_folder: str, output_folder: str):
             Path(output_path).parent.mkdir(parents=True, exist_ok=True)
             convert_mha2nii(os.path.join(input_folder, file), output_path)
 
+def compress_nii_to_niigz(input_file: str, output_file: str = None):
+    nii_image = nib.load(input_file)
+    output_file = output_file.replace(".nii", ".nii.gz") if output_file else input_file.replace(".nii", ".nii.gz")
+    nib.save(nii_image, output_file)
+    os.remove(input_file)
+
+
+
+def convert_nii_to_nii_gz(input_directory: str, output_directory: str = None):
+    if not output_directory:
+        output_directory = input_directory
+    for input_file in tqdm(os.listdir(input_directory)):
+        compress_nii_to_niigz(os.path.join(input_directory, input_file), 
+                              os.path.join(output_directory, input_file))
+
 
 @click.command()
 @click.option(
@@ -205,11 +220,10 @@ def convert_totalsegmentator_to_unet_dataset(
 
 
 @click.command()
-@click.option(
-    "--folder-path",
+@click.argument(
+    "folder-path",
     type=str,
     required=True,
-    help="Path to the folder containing the .nii.gz files to be renamed.",
 )
 def add_channel_dimension_to_folder(folder_path: str):
     _add_channel_dimension_to_folder(folder_path)
@@ -226,6 +240,15 @@ def add_channel_dimension_to_folder(folder_path: str):
 def convert_mha_to_nii_gz(input: str, output: str):
     convert_mha_folder_to_nii(input, output if output else input)
 
+@click.command()
+@click.argument("input", type=str, required=True)
+@click.option("--output", type=str, default=None)
+def convert_nii_to_nii_gz_folder(input: str, output: str):
+    convert_nii_to_nii_gz(input, output)
+
+
 
 if __name__ == "__main__":
-    convert_mha_to_nii_gz()
+    add_channel_dimension_to_folder()
+
+

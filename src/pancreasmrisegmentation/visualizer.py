@@ -170,7 +170,7 @@ TOTAL_PAGES = max(1, math.ceil(len(image_files) / args.batch_size))
 
 checklist_options = []
 all_entity_ids = []
-for ent in ENTITIES:
+for ent in tqdm(ENTITIES):
     ent_id = ent["id"]
     all_entity_ids.append(ent_id)
     rgb_color = ENTITY_COLORS[ent_id]
@@ -187,16 +187,17 @@ for ent in ENTITIES:
     checklist_options.append({'label': label_component, 'value': ent_id})
 
 app.layout = html.Div([
+    html.Div(id='scroll-target'), # Dummy target for smooth scrolling
     dcc.Store(id='page-store', data=1), 
     
     dbc.Container([
         dbc.Row([
-            dbc.Col(
-                html.H2(f"Quality Assurance Viewer ({len(image_files)} Scans)"), 
-                width=12, 
-                style={"color": "#f8f9fa", "textAlign": "left"}
-            ),
-        ], className="py-3"),
+            dbc.Col([
+                html.H2(f"Quality Assurance Viewer ({len(image_files)} Scans)", style={"color": "#f8f9fa", "textAlign": "left"}),
+                # --- Added Progress Bar ---
+                dbc.Progress(id="progress-bar", value=0, label="", color="info", className="mt-2 mb-4", style={"height": "20px"})
+            ], width=12, className="pt-3"),
+        ]),
         
         dcc.Loading(
             id="loading-grid",
@@ -219,12 +220,26 @@ app.layout = html.Div([
 ], style={"backgroundColor": "#1c2833", "minHeight": "100vh", "paddingBottom": "20px"})
 
 
+app.clientside_callback(
+    """
+    function(page) {
+        // Scroll to top smoothly whenever the page changes
+        window.scrollTo({top: 0, behavior: 'smooth'});
+        return window.dash_clientside.no_update;
+    }
+    """,
+    Output('scroll-target', 'children'),
+    Input('page-store', 'data'),
+    prevent_initial_call=True
+)
 
 @app.callback(
     [Output('page-store', 'data'),
      Output('btn-prev', 'disabled'),
      Output('btn-next', 'disabled'),
-     Output('page-indicator', 'children')],
+     Output('page-indicator', 'children'),
+     Output('progress-bar', 'value'),     # Update Progress Value
+     Output('progress-bar', 'label')],    # Update Progress Label
     [Input('btn-prev', 'n_clicks'),
      Input('btn-next', 'n_clicks')],
     [State('page-store', 'data')],
@@ -242,7 +257,11 @@ def update_pagination(prev_clicks, next_clicks, current_page):
     next_disabled = (current_page == TOTAL_PAGES)
     indicator_text = f"Page {current_page} of {TOTAL_PAGES}"
     
-    return current_page, prev_disabled, next_disabled, indicator_text
+    # Calculate progress percentage
+    progress_percent = (current_page / TOTAL_PAGES) * 100
+    progress_label = f"{progress_percent:.1f}%"
+    
+    return current_page, prev_disabled, next_disabled, indicator_text, progress_percent, progress_label
 
 @app.callback(
     Output('image-grid', 'children'),
@@ -291,7 +310,9 @@ def render_page_grid(current_page):
                         ),
                         dcc.Graph(
                             id={'type': 'graph', 'index': filename}, 
-                            figure=fig, config={'displayModeBar': False}, style={"height": "350px"}
+                            figure=fig, 
+                            config={'displayModeBar': True, "scrollZoom": False}, 
+                            style={"height": "350px"}
                         )
                     ], className="p-2"),
                     dbc.CardFooter(
